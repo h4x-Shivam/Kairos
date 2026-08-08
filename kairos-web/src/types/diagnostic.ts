@@ -1,0 +1,108 @@
+/**
+ * Strict TypeScript Data Contracts for Kairos Quant Engine.
+ */
+
+export type HorizonMode = "COMPOUNDER" | "SWING";
+export type MarketCapBucket = "LARGE_CAP" | "MID_CAP" | "SMALL_CAP";
+export type PrimaryAction = "HOLD" | "TIGHTEN_STOP" | "TRIM_25" | "TRIM_50" | "EXIT_FULLY";
+
+export type OverrideRule =
+  | "NONE"
+  | "TIER_1_HARD_GOVERNANCE_BYPASS"
+  | "RULE_2A_STOP_BREACH_COMPOUNDER"
+  | "RULE_2B_STOP_BREACH_SWING"
+  | "RULE_1_COMPOUNDER_VOLATILITY_BUFFER"
+  | "RULE_3_SELL_INTO_STRENGTH"
+  | "RULE_4_DOUBLE_STRUCTURAL_BREAKDOWN"
+  | "RULE_5_MOMENTUM_EXHAUSTION_DIVERGENCE";
+
+export interface ScoreCard {
+  s_fund: number;
+  s_tech: number;
+  s_quant: number;
+  s_news: number;
+  s_composite: number;
+}
+
+export interface PrecedenceWeights {
+  w_fund: number;
+  w_tech: number;
+  w_quant: number;
+  w_news: number;
+  base_multiplier: number;
+  net_multiplier: number;
+}
+
+export interface StopLossTelemetry {
+  current_price: number;
+  chandelier_stop: number;
+  cushion_pct: number;
+  atr_14: number;
+  highest_high_22: number;
+  is_stop_breached: boolean;
+}
+
+export interface RiskRewardTelemetry {
+  target_price: number;
+  reward_delta: number;
+  risk_delta: number;
+  risk_reward_ratio: number;
+  quarter_kelly_pct: number;
+}
+
+export interface TaxImpactResult {
+  shares_held: number;
+  shares_to_sell: number;
+  shares_retained: number;
+  buy_price: number;
+  current_price: number;
+  gross_proceeds: number;
+  capital_gain: number;
+  tax_type: "STCG" | "LTCG";
+  tax_rate_pct: number;
+  tax_liability: number;
+  net_cash_realized: number;
+  new_breakeven_price: number;
+  new_downside_cushion_pct: number;
+}
+
+export interface DiagnosticOutput {
+  symbol: string;
+  company_name: string;
+  horizon_mode: HorizonMode;
+  market_cap_bucket: MarketCapBucket;
+  action: PrimaryAction;
+  rule_applied: OverrideRule;
+  explanation: string;
+  scores: ScoreCard;
+  weights: PrecedenceWeights;
+  stop_telemetry: StopLossTelemetry;
+  risk_telemetry: RiskRewardTelemetry;
+  audit_hash: string;
+  evaluated_at_epoch: number;
+  tax_impact?: TaxImpactResult | null;
+}
+
+export interface StockSearchResult {
+  symbol: string;
+  company_name: string;
+  exchange: string;
+  market_cap_bucket: MarketCapBucket;
+  sector: string;
+}
+
+export type StageType =
+  | "INITIALIZING"
+  | "FETCHING_OHLCV"
+  | "FETCHING_FUNDAMENTALS"
+  | "SENTIMENT_ANALYSIS"
+  | "RESOLVING_CONFLICTS"
+  | "COMPLETE"
+  | "ERROR";
+
+export interface TelemetryEvent {
+  stage: StageType;
+  progress: number;
+  message: string;
+  data?: DiagnosticOutput | null;
+}

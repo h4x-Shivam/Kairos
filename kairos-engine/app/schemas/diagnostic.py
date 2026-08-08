@@ -1,5 +1,5 @@
 """Diagnostic schemas and Pydantic data contracts for Kairos Quant."""
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.enums import (
     HorizonMode,
@@ -143,3 +143,5 @@ class DiagnosticOutput(BaseModel):
     risk_telemetry: RiskRewardTelemetry
     audit_hash: str
     evaluated_at_epoch: int
+    tax_impact: Optional[Dict[str, Any]] = None
+

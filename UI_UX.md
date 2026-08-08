@@ -1,227 +1,207 @@
-# UI/UX Design Specification & Institutional Terminal Architecture — v3.0
-# Project: "When to Sell" Engine (Kairos Quant)
-
-**Document Status:** Approved Architecture & Frontend Design Specification  
-**Parent Documents:** [PRD.md](file:///d:/Kairos/PRD.md) • [TRD.md](file:///d:/Kairos/TRD.md) • [APP_FLOW.md](file:///d:/Kairos/APP_FLOW.md) • [BACKEND_SCHEMA.md](file:///d:/Kairos/BACKEND_SCHEMA.md) • [API.md](file:///d:/Kairos/API.md)  
-**Design Paradigm:** Brutalist Pure Monochrome Institutional Trading Terminal — "Linear Meets Bloomberg with Pitch-Black Grid Aesthetics"
-
----
-
-## 0. Design Thesis & Anti-AI Philosophy
-
-Kairos is an **institutional quant diagnostic terminal**, not a generic fintech dashboard or a cliché AI-generated web app.
-
-### Strict Anti-AI Design Guardrails:
-1. **Zero Generic AI Tropes:** No pastel purple gradients, no fuzzy rainbow drop-shadows, no rounded bubbly cards, no generic floating orbs, and no decorative stock illustrations.
-2. **Brutalist Monochrome Precision:** Pitch black (`#000000`), chalk white (`#FFFFFF`), and razor-sharp 1px high-contrast borders (`#27272A`). Color is never used for mere decoration; it is strictly an informational state indicator.
-3. **Institutional Data Density:** High information ratio per square inch. Layouts feature monospace numbers, tabular numeric alignment (`font-mono tabular-nums`), and explicit mathematical explainability.
-4. **The Signature Kinetic Motif — Monotonic Chandelier Ratchet:** The core quantitative mechanism of Kairos is the **Chandelier Trailing-Stop floor**—a stop level that only ratchets upward, never down. Progress indicators, state changes, and evaluation steps permanently "lock in" with the same monotonic discipline.
+# UI/UX Design Specification — v2.0
+# Project: "When to Sell" Engine (Kairos)
+**Document Status:** Consolidated — Supersedes all prior UI/UX drafts
+**Parent Documents:** PRD.md • TRD.md • APP_FLOW.md • BACKEND_SCHEMA.md
+**Design Paradigm:** Monochrome Editorial Minimalism — Heavy Typography, Two Reserved Signal Colors
 
 ---
 
-## 1. Design Tokens & System Foundations
+## 1. Design Philosophy
 
-### 1.1 Pure Monochrome & High-Contrast System Palette
+### 1.1 What this is not
+Kairos is not a Bloomberg-terminal pastiche and not a generic rounded-card SaaS dashboard. Both were explicitly tried and rejected during design iteration. No console/CLI styling (no `>` prompts, no blinking cursors, no line-by-line checkmark logs), no gradient stat cards, no icon badges per metric, no soft drop shadows, no hover-bounce/scale micro-interactions.
+
+### 1.2 What this is
+**Swiss/editorial minimalism.** Black, white, and grey, with exactly two reserved exception colors used nowhere except their named purpose (Section 3.2). Heavy typographic weight, size, and negative space carry the visual hierarchy and emotional register that color would normally carry. The product should feel closer to a well-designed print publication than a trading app.
+
+### 1.3 Core UX principle: severity through weight, not hue
+Because color is almost entirely unavailable, verdict severity escalates through **grayscale fill and font weight** — lighter/outlined for mild states, progressively darker fill and heavier weight for more serious states. The two reserved colors (yellow, red) each mark exactly one state; their rarity is what makes them legible. See Section 5 for the full severity ladder.
+
+### 1.4 Explainability as a design requirement
+Every verdict, score, and calculated figure must expose the reasoning behind it — this is a product requirement (SEBI non-advisory positioning depends on it), not just a nice-to-have. Composite scores, module weights, and the active rule that produced a verdict are never hidden behind a single number.
+
+---
+
+## 2. Design Tokens
+
+### 2.1 Color System
 
 ```css
 :root {
-  /* Pitch-Black & Brutalist Base */
-  --bg-pitch: #000000;         /* Root terminal and page backdrop */
-  --bg-panel: #09090B;         /* High-contrast panel / card surface */
-  --bg-elevated: #18181B;      /* Active tabs, hover states, command popovers */
-  --bg-input: #121215;         /* Search inputs and interactive fields */
-  
-  /* Razor Hairline Borders */
-  --border-subtle: #27272A;    /* 1px structural container borders */
-  --border-strong: #3F3F46;    /* Focused inputs, active tab indicators */
-  --border-white: #FFFFFF;     /* Brutalist active focus outline */
-  --grid-line: rgba(255, 255, 255, 0.05); /* Aceternity background grid lines */
-  
-  /* High-Contrast Typographic Hierarchy (WCAG 2.1 AAA Compliant) */
-  --text-pure: #FFFFFF;        /* 100% Pure White (Hero headlines, action badges, prices) */
-  --text-muted: #A1A1AA;       /* Zinc Gray (Labels, metric descriptors, timestamps) */
-  --text-dark: #71717A;        /* Dark Muted Zinc (Keyboard shortcuts, footers) */
-  --text-code: #E4E4E7;        /* Crisp Monospace text */
-  
-  /* Action & Semantic State Accents (Strictly for Verdicts & Alerts) */
-  --state-hold: #10B981;       /* Emerald (HOLD) */
-  --state-tighten: #06B6D4;    /* Cyan (TIGHTEN STOP) */
-  --state-trim25: #F59E0B;     /* Amber (TRIM 25%) */
-  --state-trim50: #F97316;     /* Orange (TRIM 50%) */
-  --state-exit: #EF4444;       /* Crimson Red (EXIT FULLY) */
-  --state-emergency: #DC2626;  /* Flashing Red (Tier-1 Hard Governance Bypass) */
+  /* Monochrome Base */
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1F1F1F;
+
+  --grey-100: #F5F5F5;
+  --grey-300: #B3B3B3;
+  --grey-500: #737373;
+  --grey-700: #404040;
+  --grey-900: #1A1A1A;
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #A3A3A3;
+  --text-tertiary: #6B6B6B;
+
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --border-active: rgba(255, 255, 255, 0.24);
+
+  /* The only two reserved exception colors in the entire product */
+  --signal-good: #EAB308;      /* Yellow — reserved exclusively for the HOLD verdict, nothing else */
+  --signal-critical: #DC2626;  /* Red — reserved exclusively for Tier 1 governance/critical alerts, nothing else */
 }
 ```
 
+**Hard rule:** No color appears anywhere in the product other than these two, and each of those two never appears on anything except its named state. Module status labels, chart lines, buttons, links, tax/proceeds figures in the simulator — all grayscale. If a component seems to need a third color, solve it with grayscale weight/fill or spacing instead; that constraint is the point of this direction, not a limitation to design around.
+
+### 2.2 Typography
+
+| Role | Font Family | Weight | Notes |
+|---|---|---|---|
+| Wordmark / Display Headlines | Condensed grotesk (e.g. Archivo Black, Bebas Neue) | 800-900 | Used for "KAIROS" wordmark and hero headline only |
+| Verdict Text | Same condensed display face | 800-900 | 72-96px at desktop width for the verdict label — dramatically larger than any other element on screen |
+| Numeric & Prices | JetBrains Mono | 500-600 | All prices, scores, percentages, ratios — monospace is a legibility/tabular-alignment choice, not a terminal-aesthetic choice |
+| Card Headers | Inter | 600 | Module titles, section headers |
+| Body & Explanations | Inter | 300-400 | Deliberately light weight — the contrast between this and the heavy display weight is a primary hierarchy tool in a system without much color |
+| Micro Labels | Inter | 500 | Uppercase badges, category tags, timestamps |
+
+Generous negative space around the verdict box and section boundaries is required — minimalism needs real whitespace to read as intentional rather than sparse. Do not compress layout to fit more above the fold.
+
 ---
 
-### 1.2 Typography Hierarchy
+## 3. Navbar
 
-| Role | Font Family | Weight | Size | Tracking | Usage |
-|---|---|---|---|---|---|
-| **Brutalist Brand Wordmark** | `Archivo Black` / `Cabinet Grotesk` | 900 (Black) | 22px | `-0.05em` | Minimalist `"svxm"` / `"KAIROS"` logo |
-| **Hero Headline** | `Archivo Black` / `Space Grotesk` | 900 (Black) | 48px–60px | `-0.04em` | *"Kairos, want to know, when to sell your holding?"* |
-| **Action Verdict Badge** | `Space Grotesk` / `Inter` | 900 (Black) | 40px–56px | `-0.03em` | Massive headline (`TRIM 25%`, `HOLD`, `EXIT FULLY`) |
-| **Numeric Telemetry & Prices** | `JetBrains Mono` | 600 (Semi-Bold)| 16px–24px | `0.00em` | Tabular numbers: LTP (₹942.50), Stop (₹885.00), Kelly (25%) |
-| **HUD Tab Labels** | `JetBrains Mono` | 700 (Bold) | 12px | `+0.08em` | `[ 01: CHARTS ]`, `[ 02: DIAGNOSTIC LEDGER ]` |
-| **Data Metric Values** | `JetBrains Mono` | 500 (Medium) | 13px–15px | `0.00em` | PEG 1.12, ROCE 21.0%, RSI 41.2 |
-| **Terminal Log Stream** | `JetBrains Mono` | 400 (Regular) | 12px–13px | `0.00em` | `> INGESTING NSE TICK SERIES [OK 42ms]` |
-| **Explanatory Body Text** | `Inter` | 400 (Regular) | 14px | `-0.01em` | Mathematical reasons, rule descriptions, tooltips |
+- Wordmark far left, condensed display face, pure black background, 1px hairline border at the bottom only.
+- Right side: horizon mode toggle (`SWING` / `COMPOUNDER`) as plain uppercase text with a small live indicator dot — not a rounded pill button.
+- Free-tier quota indicator (e.g. `2/3 SCANS`) sits beside the mode toggle, same minimal text treatment.
 
 ---
 
-## 2. Navigation & Homepage Architecture
+## 4. Home Page
 
-### 2.1 Minimalist High-Contrast Navbar (Image 1 Reference)
-- **Visual Design:** Pure pitch-black (`#000000`) bar with a razor 1px bottom border (`#27272A`).
-- **Left Anchor:** Brutalist lowercase/uppercase heavy wordmark `kairos` set in bold typography (`Archivo Black`).
-- **Center Navigation:** Monospaced navigation links (`// RESEARCH`, `// METHODOLOGY`, `// SEBI PROOF`).
-- **Right Anchor:** Brutalist tag badge `dev` / `v1.0` and live free-tier scan counter pill (`⚡ 3/3 SCANS`).
+### 4.1 Hero Section
+- Background: particle/grid background component, dimmed well below its demo default (~4-6% opacity) — the demo preset reads as an unfinished component-library showcase if left at full visibility.
+- Headline: "Kairos. Know when to sell — before the market tells you." (or equivalent copy stating the actual product value, not just the brand name). Condensed display face, large, tight letter-spacing, white, centered.
+- Subhead: one sentence, Inter light weight, muted grey, stating plainly what the diagnostic engine does — no marketing language.
+- Search bar: monospace input, terminal-prompt-style placeholder (`Search NSE/BSE ticker...`), grayscale only.
+
+### 4.2 Below the Fold (3-4 sections)
+Show proof, not generic feature icons:
+- **Proof 01:** Backtested drawdown reduction vs. buy-and-hold.
+- **Proof 02:** A worked example of the conflict-resolution engine reconciling fundamentals vs. technicals.
+- **Proof 03:** The SHA-256 deterministic-reproducibility mechanic, explained plainly.
+
+Avoid generic "why choose us" icon-grid sections — every section should demonstrate something real about the engine, not describe it abstractly.
+
+---
+
+## 5. Verdict Severity System
+
+Severity escalates through grayscale fill and weight. Exactly two reserved colors exist in the whole system, each mapped to exactly one state:
+
+| Verdict | Treatment |
+|---|---|
+| `HOLD` | `--signal-good` yellow text/border, otherwise plain |
+| `TIGHTEN_STOP` | White text, thin 1px `--grey-500` outline only, no fill — mildest concern, quietest treatment |
+| `TRIM_25` | White text, `--grey-500` medium-grey fill block — visible step up from Tighten Stop |
+| `TRIM_50` | White text, `--grey-900` near-black fill block, heavier font weight — clear step up from Trim 25% |
+| `EXIT_FULLY` | White text on pure black fill, heaviest weight, widest letter-spacing — maximum grayscale severity |
+| `TIER 1 CRITICAL` | White text on `--signal-critical` red fill — the **only** red in the entire product, deliberately breaking the pattern to register as a state outside normal severity |
+
+This ordering is deliberate and must read as monotonically increasing severity through weight/fill alone. Never introduce a second color into this ladder.
+
+Module status labels (`STRONG`/`WEAK`/`FAIR`/`POSITIVE`/`NEGATIVE`) stay grayscale only — `--signal-good` and `--signal-critical` are reserved exclusively for the top-level verdict, never extended down to module-level indicators.
+
+---
+
+## 6. Loading / Analysis State
+
+On ticker submission, show a **single-stage-at-a-time editorial loading sequence** (not a console log):
+
+Stages (frontend-timed for MVP; structure the component to swap to a real backend SSE stream later without rewriting — drive the UI off a `stage` state variable, not scattered timeouts):
 
 ```
-+-------------------------------------------------------------------------------------------------------------------+
-| kairos                         // METHODOLOGY    // SEBI PROOF                        [⚡ 3/3 SCANS]   [dev]      |
-+-------------------------------------------------------------------------------------------------------------------+
+[15%]  INITIALIZING           "Connecting to institutional telemetry feeds..."
+[35%]  FETCHING_OHLCV         "Ingesting price series & computing Wilder ATR..."
+[60%]  FETCHING_FUNDAMENTALS  "Analyzing balance sheet quality, ROCE & debt solvency..."
+[80%]  SENTIMENT_ANALYSIS     "Scanning SEBI regulatory filings & NLP indicators..."
+[92%]  RESOLVING_CONFLICTS    "Executing 2D Precedence Grid & asymmetric override rules..."
+[100%] COMPLETE               → transitions to dashboard
 ```
 
----
+- One stage shown at a time, large, centered, heavy weight — the current stage description is the only content on screen.
+- Thin horizontal progress line (`--grey-700` track, white fill) beneath the text, advancing to match stage percentage.
+- Crossfade transitions between stages — no typewriter/line-appearing effect.
 
-### 2.2 Aceternity Grid Hero Section (Image 2 Reference)
-- **Background Engine:** Aceternity Dark Grid (`@aceternity/grid-background-demo`) rendered with sharp 1px grid lines (`rgba(255, 255, 255, 0.05)`) with an elliptical radial vignette fading into pitch black (`#000000`).
-- **Hero Copy:**
-  - Main Headline: **"Kairos, want to know, when to sell your holding?"** (Chalk White `#FFFFFF`, Heavy Brutalist tracking).
-  - Subline: *"Algorithmic exit discipline & downside protection engine for Indian equities."*
-- **Command Search Input:**
-  - High-contrast centered command input box (`bg-[#09090B] border border-[#27272A] focus:border-white`).
-  - Left icon: Terminal prompt `$` or search glass.
-  - Keyboard hint badge: `⌘K` or `ENTER`.
-  - Instant autocomplete popover with debounced search results (`TATAMOTORS.NS`, `RELIANCE.NS`, `HDFCBANK.NS`, `SUZLON.NS`).
+**Backend note:** the real staged version requires a new `GET /api/v1/diagnostic/{symbol}/stream` (SSE or WebSocket) endpoint — the current TRD only defines a single-shot `GET /api/v1/diagnostic/{symbol}`. Track this as a Phase 2 backend addition; don't let frontend assume it already exists.
 
 ---
 
-### 2.3 Homepage Structure: 4 Core Slides / Sections
+## 7. Dashboard Layout
 
-1. **Slide 1: Hero Command Center (Grid Background + Search):**
-   - Direct stock entry point, instant scan execution, and quick-access watchlist pills.
-2. **Slide 2: Mistake vs. Invariant Truth Matrix:**
-   - Side-by-side comparative ledger contrasting retail emotional traps (The Disposition Effect, panic selling winners, holding decaying losers) against Kairos's quantitative invariants (Monotonic trailing floors, fractional Kelly trim, SEBI-stamped audit trails).
-3. **Slide 3: 4-Pillar Algorithmic Architecture:**
-   - Interactive breakdown of the 4 independent modules:
-     - **Pillar A (Fundamental):** Balance sheet health, PEG, ROCE trend, Promoter pledge.
-     - **Pillar B (Technical):** 50/200 DMA alignment, 14-period RSI, Delivery accumulation.
-     - **Pillar C (Quant & Volatility):** 52-week drawdown, 1-year beta, annualized volatility.
-     - **Pillar D (Regulatory NLP):** ONNX FinBERT corporate filing scanner & Tier-1 trigger.
-4. **Slide 4: SEBI Cryptographic Proof & Pro Access:**
-   - Live sample SHA-256 audit hash verification modal and Pro Tier subscription options (₹799/month).
+### Zone 1 — Identity Strip (top, full width)
+- Left: Ticker, company name, sector/industry pill, Beta, ISIN (small, muted).
+- Right: LTP, live change %, day high/low.
 
----
+### Zone 2 — Verdict Corner Box (top-right, large — roughly a quarter of viewport width, not a small badge)
+Hard corners, 1px hairline border, no shadow. Contents top to bottom:
+- Verdict label, per Section 5 treatment.
+- Composite score (`63.4 / 100`), monospace, directly under the label — never omitted.
+- Weights applied, one small monospace line (`FUND 45% · TECH 15% · QUANT 25% · NEWS 15%`).
+- Active rule tag, small monospace pill (`RULE_1_COMPOUNDER_VOLATILITY_BUFFER`).
+- Live monospace evaluation timestamp (`EVALUATED 15:45:02 IST`).
+- Horizon toggle lives directly adjacent to this box, since it's the input driving everything inside it.
+- Earnings-blackout badge (pre-earnings 48h window) and stale-data warning pill (`Cached Data — 15m delay`) attach here when active.
 
-## 3. Full-Screen HUD Radial Scanner Loading Transition
+### Zone 3 — Stop-Loss Desk (left) + Risk/Reward & Sizing (right), side by side
+- **Stop-Loss Desk:** calculated stop price, ATR(14) value, multiplier used (auto/manual indicator), distance-to-stop %, manual override control.
+- **Risk/Reward:** target price with source badge (`ANALYST CONSENSUS` / `TECHNICAL FALLBACK` / `USER SET`), R:R ratio, Fractional Kelly trim %, custom target input.
 
-When a user selects or searches a ticker (e.g., `TATAMOTORS.NS`), the app smoothly transitions into a **Full-Screen HUD Radar Scanner**:
+### Zone 4 — Chandelier Chart
+Full width. Candlesticks, 50/200 DMA, ratcheting Chandelier stop line, target line, timeframe switcher (`15m` / `1D` / `1W`). All lines grayscale except where a line directly represents the active verdict color (avoid this exception unless clearly justified — default to grayscale chart lines with labels).
 
-```
-+-------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                   |
-|                                            [ ◎ RADIAL TELEMETRY SCAN ]                                            |
-|                                                   TATAMOTORS.NS                                                   |
-|                                                                                                                   |
-|                           ┌───────────────────────────────────────────────────────────┐                           |
-|                           │  [✓] 01. INGESTING NSE TICK & MULTI-TIMEFRAME OHLCV BARS  │ [ 42ms ]                  |
-|                           │  [✓] 02. RUNNING ONNX FINBERT REGULATORY FILING NLP SCAN  │ [ 68ms ]                  |
-|                           │  [✓] 03. COMPUTING 4-PILLAR SCORES & SCIPY RSI DIVERGENCE │ [ 31ms ]                  |
-|                           │  [◎] 04. RESOLVING 2D PRECEDENCE GRID & STAMPING SHA-256  │ [ RUNNING ]               |
-|                           └───────────────────────────────────────────────────────────┘                           |
-|                                                                                                                   |
-|                                             [ TELEMETRY: 85% COMPLETE ]                                           |
-+-------------------------------------------------------------------------------------------------------------------+
-```
+### Zone 5 — 4-Module Diagnostic Grid (2x2, confirmed layout choice)
+Hard corners, hairline borders, no icons, no drop shadows. Each box:
+- Module label as small monospace header (`FUND`, `TECH`, `QUANT`, `NEWS`).
+- Score as the dominant large monospace number — bigger than the label, this is where visual weight lives instead of card chrome.
+- 3 driver metrics below in smaller monospace.
+- Status word (`STRONG`/`WEAK`/`FAIR`/`POSITIVE`/`NEGATIVE`) per Section 5's grayscale-only rule.
+- Expands inline on click into the deep-dive sub-metric table (5Y P/E median, FCF conversion, D/E ratio, etc., per the TRD's `explanation_trace` schema).
 
-- **Visual Dynamics:**
-  - Rotating concentric circular radar grid centered on screen.
-  - Sequential telemetry checklist lines lighting up in monospace text with actual millisecond execution times.
-  - Seamless, glitch-free cross-fade into the Multi-Tab Command Center Dashboard upon completion.
+### Zone 6 — Execution Simulator ("What If I Trim Now?")
+Buy price + quantity inputs, trim percentage slider/presets, instant tabular output (shares to sell/remaining, gross proceeds, realized profit, estimated tax, net cash, new breakeven, downside cushion expansion). All figures grayscale monospace — no amber/red accents on tax or proceeds lines; these are neutral information, not alerts, and must follow the same two-color-exception rule as everything else.
 
----
+### Zone 7 — Regulatory Audit Footer (fixed, full width, bottom)
+- SEBI non-advisory disclaimer text.
+- SHA-256 audit hash, monospace, truncated with expand-on-click for the full hash.
+- Must clear WCAG AA contrast (4.5:1) — use `--text-secondary`, not `--text-tertiary`, for this specific text.
 
-## 4. Multi-Tab Command Center Dashboard Architecture
-
-The dashboard is structured into **Two Core Regions**:
-1. **Persistent Top HUD & Typographic Verdict Banner** (Always visible).
-2. **4 Dedicated High-Density Command Tabs** (Deep-dive workspaces).
-
-```
-+-------------------------------------------------------------------------------------------------------------------+
-| TATAMOTORS.NS  •  Tata Motors Ltd  •  ₹942.50  [LARGE_CAP]           HORIZON: [ COMPOUNDER ● ]  SWING | ⚡ 2/3 SCANS|
-+-------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                   |
-|  [ PRIMARY ACTION VERDICT ]                                      [ VOLATILITY STOP FLOOR ]   [ RISK / REWARD ]    |
-|  ██████████████████████████████████████████                      ₹885.00 (-6.10% Cushion)    1 : 2.39             |
-|  TRIM 25%                                                        2.20x Wilder ATR            [KELLY: 25.0%]       |
-|  Fundamental growth strong, but technical momentum waning.                                                        |
-|  Lock partial profit (Trim 25%); maintain core position.         OVERRIDE: RULE_1_COMPOUNDER_VOLATILITY_BUFFER    |
-|                                                                                                                   |
-+-------------------------------------------------------------------------------------------------------------------+
-| [ 01: CHARTS & STOP FLOOR ]   [ 02: DIAGNOSTIC LEDGER ]   [ 03: REGULATORY NLP ]   [ 04: TRIM SIMULATOR & TAX ]   |
-+-------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                   |
-|  [ ACTIVE TAB WORKSPACE CONTENT LOADED HERE ]                                                                     |
-|                                                                                                                   |
-+-------------------------------------------------------------------------------------------------------------------+
-| SHA-256 AUDIT: a4f89d38c642bf1c94afbf4c8996fb92427ae41e4649b934ca495991b7852c91    [COPY AUDIT]  [INSPECT JSON]  |
-+-------------------------------------------------------------------------------------------------------------------+
-```
+### Conditional State — Tier 1 Governance Alert
+When a hard-override trigger fires (auditor resignation, SEBI probe, promoter pledge >50%, circuit lock), this **replaces Zone 2 entirely** — the verdict box expands into the red critical state, forced `EXIT FULLY`, with a direct citation link to the triggering filing. Zones 3-6 remain visible but visually de-emphasized (reduced opacity) underneath it, since the override bypasses their scores entirely per the conflict-resolution engine. This is not a small banner added elsewhere on the page — the primary verdict area itself must communicate that normal scoring has been bypassed.
 
 ---
 
-### 4.1 Tab 1: `[ 01: CHARTS & STOP FLOOR ]`
-- **TradingView Lightweight Charts Integration:** Full HTML5 canvas rendering:
-  - Multi-timeframe switcher: `[ 15M ]` `[ 1D ]` `[ 1W ]`.
-  - Candlestick price series with 50 DMA (`#06B6D4`) and 200 DMA (`#A1A1AA`) overlays.
-  - **Monotonic Stepped Chandelier Stop Floor Line (`#EF4444` / `#F59E0B`):** Step-line that ratchets strictly upward with price highs, visually proving the downside safety floor.
-  - Upper Target Line (`#10B981` dashed line).
-- **Interactive ATR Multiplier Slider:**
-  - Fine-grained slider ($1.0\text{x}$ to $4.0\text{x}$ in $0.1\text{x}$ increments) allowing the user to dynamically test tighter or wider trailing stops with live risk-reward recalculation.
+## 8. Responsive / Mobile Adaptation
+
+- **Sticky verdict bar:** once the user scrolls past Zone 2, a fixed 48px bottom bar shows `TICKER • LTP • VERDICT (Stop: ₹X)`, following Section 5's grayscale/yellow/red treatment.
+- **4-module grid → accordion:** the 2x2 grid collapses into swipeable single-column accordion rows on mobile, preserving the score-dominant typography.
+- **Chart:** single-finger pan, pinch-to-zoom, long-press for crosshair inspection.
+- **Loading sequence:** identical single-stage-at-a-time treatment, full width.
 
 ---
 
-### 4.2 Tab 2: `[ 02: DIAGNOSTIC LEDGER ]`
-- **4-Pillar Metric Grid:**
-  - **Pillar 1: Fundamental Score ($S_{\text{fund}} = 84.0$):** PEG Ratio (1.12), ROCE Trend (+3.2% QoQ), Promoter Pledge (0.0%), FCF/Net Profit (0.88), Debt-to-Equity (0.42).
-  - **Pillar 2: Technical Score ($S_{\text{tech}} = 38.0$):** Price vs 50 DMA, 200 DMA, 14-period RSI (41.2), Delivery Volume % (34.2%).
-  - **Pillar 3: Quant & Risk Score ($S_{\text{quant}} = 65.0$):** 52-Week High Drawdown (-8.4%), 1-Year Realized Volatility (22.0%), Beta (1.12).
-  - **Pillar 4: Regulatory & News ($S_{\text{news}} = 70.0$):** FinBERT time-decayed aggregate score, Tier-1 regulatory probe status (`CLEAR`).
-- **2D Precedence Weights Applied:** Displays exact weights allocated (Fund: 45%, Tech: 15%, Quant: 25%, News: 15%).
+## 9. Accessibility (WCAG 2.1 AA)
+
+- All body text must clear 4.5:1 contrast against `--bg-primary`. Verified: `--text-tertiary` (#6B6B6B) does **not** reliably clear this against pure black at small sizes — restrict `--text-tertiary` to large/bold text only, or promote disclaimer and other compliance-relevant text to `--text-secondary`.
+- Every verdict state must be distinguishable without color — this is naturally satisfied by the weight/fill escalation system in Section 5, but confirm each state also carries a clear text label (never rely on fill/weight alone for a screen-reader user).
+- Full keyboard navigation across search, horizon toggle, module accordions, and simulator inputs.
 
 ---
 
-### 4.3 Tab 3: `[ 03: REGULATORY NLP ]`
-- **Chronological Regulatory Filing Feed:**
-  - Listing of all corporate filings from BSE/NSE over the last 90 days.
-  - FinBERT sentiment classification tag (`POSITIVE`, `NEUTRAL`, `NEGATIVE`) with raw confidence score (e.g. `+0.84`).
-  - Tier-1 Hard Governance Override trigger status: Auditor resignation, credit rating downgrades, SEBI forensic audit alerts.
+## 10. Open Items for Engineering
+1. New SSE/WebSocket streaming endpoint for the loading sequence (Section 6) — needs to be added to TRD.md, not assumed to exist.
+2. Confirm the `TargetSource` enum in the backend schema is corrected to match `ANALYST_CONSENSUS` / `TECHNICAL_FALLBACK` / `USER_CUSTOM` (a prior draft had a `HISTORICAL_PEG` value that doesn't correspond to any specified methodology).
+3. Chart line coloring (Zone 4) defaults to grayscale — confirm with design whether any chart element should ever adopt the yellow/red verdict colors, or whether the chart stays fully monochrome regardless of verdict state.
 
 ---
-
-### 4.4 Tab 4: `[ 04: TRIM SIMULATOR & TAX ]`
-- **Interactive Execution Calculator:**
-  - Sliders for **Shares Held**, **Buy Price (₹)**, **Trim % (25%, 50%, 100%)**, and **Holding Period (Months)**.
-  - Real-time output calculation:
-    - Shares to Sell vs. Shares Retained.
-    - Gross Cash Realized.
-    - Indian Capital Gains Tax deduction (STCG 20% vs LTCG 12.5% on gains $>₹1.25\text{L}$).
-    - Net Cash Added to Wallet.
-    - **New Effective Breakeven Price** on retained shares and **Downside Cushion Expansion %**.
-
----
-
-## 5. SEBI Audit Provenance Modal
-
-Clicking `[INSPECT JSON]` or `[COPY AUDIT]` opens the **Cryptographic Verification Modal**:
-- Displays raw immutable JSON input vector.
-- Displays computed 64-character SHA-256 signature hash.
-- Verified timestamp in IST and UTC.
-- SEBI Algorithmic Diagnostic Sandbox compliance disclaimer.
-
----
-*Maintained under Kairos Quant Engineering Standards.*
+*This document is the canonical UI/UX reference. Prior drafts (terminal/Bloomberg color scheme, green-signal variant, dual-red variant) are superseded.*
