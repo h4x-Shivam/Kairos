@@ -1,0 +1,9 @@
+# Core Pure Quant Math & Serialization
+numpy>=1.24.0
+scipy>=1.11.0
+pandas>=2.0.0
+pydantic>=2.7.0
+
+# Testing Framework
+pytest>=8.0.0
+pytest-cov>=5.0.0
