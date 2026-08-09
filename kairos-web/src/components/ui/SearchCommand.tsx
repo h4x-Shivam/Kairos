@@ -97,8 +97,10 @@ export function SearchCommand({
   return (
     <div ref={containerRef} className={`relative w-full max-w-2xl ${className}`}>
       {/* Search Input Box */}
-      <div className="flex items-center w-full bg-bg-secondary border border-border-subtle focus-within:border-border-active transition-all px-4 py-3.5">
-        <span className="font-mono text-text-tertiary mr-3 text-sm select-none">$</span>
+      <div className="group flex items-center w-full bg-bg-secondary border border-border-subtle hover:border-text-tertiary focus-within:border-text-primary focus-within:shadow-[0_0_15px_rgba(255,255,255,0.07)] focus-within:-translate-y-0.5 transition-all duration-300 ease-out px-4 py-3.5">
+        <span className="font-mono text-text-tertiary mr-3 text-sm select-none group-focus-within:text-text-primary group-focus-within:animate-pulse transition-colors">
+          $
+        </span>
         <input
           type="text"
           value={query}
@@ -107,13 +109,13 @@ export function SearchCommand({
           onKeyDown={handleKeyDown}
           autoFocus={autoFocus}
           placeholder="Search NSE/BSE ticker (e.g. TATAMOTORS, RELIANCE, INFY)..."
-          className="w-full bg-transparent font-mono text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
+          className="w-full bg-transparent font-mono text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none transition-all"
         />
         {isLoading ? (
           <Loader2 className="w-4 h-4 text-text-secondary animate-spin" />
         ) : (
-          <div className="flex items-center gap-1">
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono border border-border-subtle bg-bg-tertiary text-text-tertiary">
+          <div className="flex items-center gap-1 opacity-50 group-focus-within:opacity-100 transition-opacity">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono border border-border-subtle bg-bg-tertiary text-text-tertiary group-focus-within:border-text-tertiary group-focus-within:text-text-secondary transition-colors">
               ENTER
             </kbd>
           </div>

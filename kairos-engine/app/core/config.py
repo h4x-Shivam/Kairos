@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field("development", description="development | staging | production")
     LOG_LEVEL: str = Field("INFO")
     
+    # Databases
+    DATABASE_URL: str = Field(..., description="PostgreSQL database URL")
+    REDIS_URL: str = Field(..., description="Redis connection URL")
+    
     # AngelOne SmartAPI Credentials
     ANGELONE_API_KEY: Optional[str] = Field(None)
     ANGELONE_CLIENT_CODE: Optional[str] = Field(None)
