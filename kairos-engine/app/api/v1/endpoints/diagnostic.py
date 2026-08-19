@@ -19,7 +19,6 @@ class EvaluateRequest(BaseModel):
     """Request payload for on-demand stock evaluation."""
     symbol: str = Field(..., description="Stock ticker symbol (e.g. TATAMOTORS, RELIANCE)")
     horizon_mode: HorizonMode = Field(HorizonMode.COMPOUNDER)
-    market_cap_bucket: MarketCapBucket = Field(MarketCapBucket.LARGE_CAP)
     timeframe: TimeFrame = Field(TimeFrame.D1)
     manual_atr_mult: Optional[float] = Field(None, ge=1.0, le=5.0)
     entry_price: Optional[float] = Field(None, gt=0)
@@ -58,7 +57,6 @@ def evaluate_stock(request: EvaluateRequest) -> DiagnosticOutput:
         diag_input = data_aggregator.build_diagnostic_input(
             symbol=request.symbol,
             horizon_mode=request.horizon_mode,
-            market_cap_bucket=request.market_cap_bucket,
             timeframe=request.timeframe,
             manual_atr_mult=request.manual_atr_mult,
         )
@@ -85,7 +83,6 @@ def evaluate_stock(request: EvaluateRequest) -> DiagnosticOutput:
 async def _stream_telemetry_generator(
     symbol: str,
     horizon_mode: HorizonMode,
-    market_cap_bucket: MarketCapBucket,
     manual_atr_mult: Optional[float],
     entry_price: Optional[float],
     holding_shares: Optional[int],
@@ -102,7 +99,6 @@ async def _stream_telemetry_generator(
         diag_input = data_aggregator.build_diagnostic_input(
             symbol=symbol,
             horizon_mode=horizon_mode,
-            market_cap_bucket=market_cap_bucket,
             manual_atr_mult=manual_atr_mult,
         )
         await asyncio.sleep(0.05)
@@ -156,7 +152,6 @@ async def _stream_telemetry_generator(
 async def stream_diagnostic(
     symbol: str,
     horizon_mode: HorizonMode = Query(HorizonMode.COMPOUNDER),
-    market_cap_bucket: MarketCapBucket = Query(MarketCapBucket.LARGE_CAP),
     manual_atr_mult: Optional[float] = Query(None, ge=1.0, le=5.0),
     entry_price: Optional[float] = Query(None, gt=0),
     holding_shares: Optional[int] = Query(None, gt=0),
@@ -167,7 +162,6 @@ async def stream_diagnostic(
         _stream_telemetry_generator(
             symbol=symbol,
             horizon_mode=horizon_mode,
-            market_cap_bucket=market_cap_bucket,
             manual_atr_mult=manual_atr_mult,
             entry_price=entry_price,
             holding_shares=holding_shares,

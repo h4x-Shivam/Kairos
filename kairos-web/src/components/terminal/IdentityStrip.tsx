@@ -20,44 +20,55 @@ export function IdentityStrip({
   companyName,
   marketCapBucket,
   currentPrice,
-  dayChangePct = -1.42,
-  dayHigh = 956.0,
-  dayLow = 938.1,
-  beta = 1.12,
+  dayHigh,
+  dayLow,
+  beta,
 }: IdentityStripProps) {
+  const isStale =
+    dayHigh !== undefined &&
+    dayLow !== undefined &&
+    (currentPrice < dayLow || currentPrice > dayHigh);
   return (
-    <div className="w-full border-b border-border-subtle bg-bg-secondary/40 px-4 sm:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-      {/* Left: Identity Metadata */}
-      <div className="flex items-baseline flex-wrap gap-3">
-        <h1 className="font-mono text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-          {symbol}
-        </h1>
-        <span className="text-sm font-sans text-text-secondary">
+    <div className="w-full bg-bg-primary px-4 sm:px-8 py-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border-subtle">
+      {/* Left: Identity Typography */}
+      <div className="flex flex-col gap-2">
+        <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight uppercase">
           {companyName}
-        </span>
-        <span className="text-[10px] font-mono px-2 py-0.5 border border-border-subtle bg-bg-primary text-text-secondary uppercase">
-          {marketCapBucket}
-        </span>
-        <span className="text-xs font-mono text-text-tertiary">
-          BETA {beta.toFixed(2)}
-        </span>
+        </h1>
+        <div className="flex items-center gap-3 font-mono text-sm text-text-secondary">
+          <span className="font-bold text-text-primary">{symbol}</span>
+          <span>&middot;</span>
+          <span className="capitalize">{marketCapBucket.replace('_', ' ').toLowerCase()}</span>
+          {beta !== undefined && (
+            <>
+              <span>&middot;</span>
+              <span>Beta {beta.toFixed(2)}</span>
+            </>
+          )}
+          {isStale && (
+            <span className="text-[10px] px-2 py-0.5 border border-signal-exit text-signal-exit font-bold uppercase animate-pulse ml-2">
+              [STALE DATA]
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Right: Live Telemetry & Pricing */}
-      <div className="flex items-baseline gap-4 sm:gap-6 font-mono text-sm">
+      {/* Right: Live Pricing */}
+      <div className="flex flex-col md:items-end gap-1 font-mono">
         <div className="flex items-baseline gap-2">
-          <span className="text-xs text-text-tertiary uppercase">LTP</span>
-          <span className="text-lg sm:text-xl font-bold text-text-primary">
+          <span className="text-4xl sm:text-5xl font-black text-text-primary tracking-tight">
             {formatCurrency(currentPrice)}
           </span>
-          <span className={`text-xs ${dayChangePct >= 0 ? "text-text-primary" : "text-text-secondary"}`}>
-            ({formatPercent(dayChangePct, true)})
-          </span>
         </div>
-
-        <div className="hidden sm:flex items-center gap-3 text-xs text-text-tertiary border-l border-border-subtle pl-4">
-          <span>H: {formatCurrency(dayHigh, false)}</span>
-          <span>L: {formatCurrency(dayLow, false)}</span>
+        <div className="flex items-center gap-2 text-xs text-text-tertiary">
+          <span>Today&apos;s Range</span>
+          {dayLow !== undefined && dayHigh !== undefined ? (
+            <span className="text-text-secondary">
+              {formatCurrency(dayLow, false)} &mdash; {formatCurrency(dayHigh, false)}
+            </span>
+          ) : (
+            <span>N/A</span>
+          )}
         </div>
       </div>
     </div>

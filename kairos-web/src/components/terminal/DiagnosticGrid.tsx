@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { ScoreCard } from "@/types/diagnostic";
+import { DiagnosticOutput } from "@/types/diagnostic";
 
 interface DiagnosticGridProps {
-  scores: ScoreCard;
+  diagnostic: DiagnosticOutput;
 }
 
 interface ModuleData {
@@ -18,8 +18,17 @@ interface ModuleData {
   subMetrics: { label: string; value: string; benchmark: string }[];
 }
 
-export function DiagnosticGrid({ scores }: DiagnosticGridProps) {
+export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  
+  const { scores, fundamentals: fund, technicals: tech, quant, stop_telemetry: stop, disclosures = [] } = diagnostic;
+
+  const tier1Active = disclosures.some((d) => d.is_tier1_trigger && d.hours_ago <= 168.0);
+  const avgSentiment = disclosures.length > 0 
+    ? disclosures.reduce((acc, d) => acc + d.sentiment_score, 0) / disclosures.length
+    : 0;
+  const sentimentStr = avgSentiment > 0.2 ? "POS" : avgSentiment < -0.2 ? "NEG" : "NEU";
+  const sentimentVal = disclosures.length > 0 ? `${avgSentiment > 0 ? '+' : ''}${avgSentiment.toFixed(2)} (${sentimentStr})` : "N/A";
 
   const modules: ModuleData[] = [
     {
@@ -29,15 +38,14 @@ export function DiagnosticGrid({ scores }: DiagnosticGridProps) {
       score: scores.s_fund,
       status: scores.s_fund >= 70 ? "STRONG" : scores.s_fund >= 45 ? "FAIR" : "WEAK",
       drivers: [
-        { label: "ROCE TREND", value: "21.4% (+3.2% QoQ)" },
-        { label: "PEG RATIO", value: "1.12 (UNDERV)" },
-        { label: "PROMOTER PLEDGE", value: "0.0% (CLEAR)" },
+        { label: "ROCE TREND", value: `${fund.roce_current.toFixed(1)}%` },
+        { label: "PEG RATIO", value: fund.peg_ratio != null ? `${fund.peg_ratio.toFixed(2)}x` : "EXCLUDED (WT REDIST)" },
+        { label: "PROMOTER PLEDGE", value: `${fund.promoter_pledge_pct.toFixed(1)}%` },
       ],
       subMetrics: [
-        { label: "5Y Median P/E", value: "18.4x", benchmark: "22.0x Sector" },
-        { label: "FCF / Net Profit", value: "0.88x", benchmark: "> 0.70x" },
-        { label: "Debt-to-Equity", value: "0.42", benchmark: "< 1.00" },
-        { label: "Interest Coverage", value: "6.8x", benchmark: "> 3.0x" },
+        { label: "Trailing 3Q ROCE", value: `${fund.roce_3q_avg.toFixed(1)}%`, benchmark: "Stable" },
+        { label: "FCF / Net Profit", value: `${fund.fcf_to_net_profit.toFixed(2)}x`, benchmark: "> 0.70x" },
+        { label: "Debt-to-Equity", value: `${fund.debt_to_equity.toFixed(2)}`, benchmark: "< 1.00" },
       ],
     },
     {
@@ -47,15 +55,13 @@ export function DiagnosticGrid({ scores }: DiagnosticGridProps) {
       score: scores.s_tech,
       status: scores.s_tech >= 70 ? "STRONG" : scores.s_tech >= 45 ? "FAIR" : "WEAK",
       drivers: [
-        { label: "DMA ALIGNMENT", value: "50 > 200 (BULL)" },
-        { label: "14-DAY RSI", value: "41.2 (DECEL)" },
-        { label: "DELIVERY %", value: "38.5% (STABLE)" },
+        { label: "DMA ALIGNMENT", value: tech.sma_50 > tech.sma_200 ? "50 > 200 (BULL)" : "50 < 200 (BEAR)" },
+        { label: "14-DAY RSI", value: `${tech.rsi_14.toFixed(1)}` },
+        { label: "DELIVERY %", value: `${tech.delivery_pct.toFixed(1)}%` },
       ],
       subMetrics: [
-        { label: "RSI Bearish Divergence", value: "NONE", benchmark: "Clear" },
-        { label: "Distance to 50 DMA", value: "+2.1%", benchmark: "Supported" },
-        { label: "Distance to 200 DMA", value: "+14.8%", benchmark: "Bullish Trend" },
-        { label: "5-Day Avg Delivery", value: "42.1%", benchmark: "> 35.0%" },
+        { label: "Distance to 50 DMA", value: `${(((stop.current_price - tech.sma_50) / tech.sma_50) * 100).toFixed(1)}%`, benchmark: "Supported" },
+        { label: "Distance to 200 DMA", value: `${(((stop.current_price - tech.sma_200) / tech.sma_200) * 100).toFixed(1)}%`, benchmark: "Trend Base" },
       ],
     },
     {
@@ -65,15 +71,13 @@ export function DiagnosticGrid({ scores }: DiagnosticGridProps) {
       score: scores.s_quant,
       status: scores.s_quant >= 70 ? "STRONG" : scores.s_quant >= 45 ? "FAIR" : "WEAK",
       drivers: [
-        { label: "52W DRAWDOWN", value: "-6.80% (NORMAL)" },
-        { label: "1-YEAR BETA", value: "1.12 (MODERATE)" },
-        { label: "ANN. VOLATILITY", value: "22.4% (STABLE)" },
+        { label: "52W DISTANCE", value: `${(((stop.current_price - quant.high_52w) / quant.high_52w) * 100).toFixed(1)}%` },
+        { label: "1-YEAR BETA", value: `${quant.beta.toFixed(2)}` },
+        { label: "ANN. VOLATILITY", value: `${quant.realized_volatility_1y.toFixed(1)}%` },
       ],
       subMetrics: [
-        { label: "Max Drawdown (1Y)", value: "-14.2%", benchmark: "-18.5% Nifty" },
-        { label: "Wilder ATR(14)", value: "₹26.14", benchmark: "2.77% of LTP" },
-        { label: "Downside Volatility", value: "14.8%", benchmark: "< 20.0%" },
-        { label: "Quarter-Kelly Fraction", value: "25.0%", benchmark: "Max 35.0%" },
+        { label: "Wilder ATR(14)", value: `₹${stop.atr_14.toFixed(2)}`, benchmark: `${((stop.atr_14 / stop.current_price) * 100).toFixed(2)}% of LTP` },
+        { label: "1Y Realized Vol", value: `${quant.realized_volatility_1y.toFixed(1)}%`, benchmark: "< 35.0%" },
       ],
     },
     {
@@ -83,9 +87,9 @@ export function DiagnosticGrid({ scores }: DiagnosticGridProps) {
       score: scores.s_news,
       status: scores.s_news >= 60 ? "POSITIVE" : scores.s_news >= 40 ? "FAIR" : "NEGATIVE",
       drivers: [
-        { label: "TIER-1 TRIGGERS", value: "NONE (PASSED)" },
-        { label: "FINBERT CONFIDENCE", value: "+0.84 (POS)" },
-        { label: "FILING FREQUENCY", value: "4 FILINGS / 90D" },
+        { label: "TIER-1 TRIGGERS", value: tier1Active ? "ACTIVE (FAIL)" : "NONE (PASSED)" },
+        { label: "FINBERT CONFIDENCE", value: sentimentVal },
+        { label: "FILING FREQUENCY", value: `${disclosures.length} FILINGS / 7D` },
       ],
       subMetrics: [
         { label: "Auditor Resignations", value: "0", benchmark: "Clean" },
@@ -101,85 +105,82 @@ export function DiagnosticGrid({ scores }: DiagnosticGridProps) {
   };
 
   return (
-    <div className="w-full space-y-4 font-mono">
+    <div className="w-full font-mono flex flex-col gap-6 py-4">
       <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
-        <span className="text-xs uppercase text-text-tertiary">
-          // 4-PILLAR DIAGNOSTIC LEDGER
+        <span className="text-[10px] uppercase text-text-tertiary tracking-widest">
+          Diagnostic Pillars
         </span>
         <span className="text-[10px] text-text-tertiary">
-          TAP CARD FOR SUB-METRIC TRACE
+          TAP TO EXPAND TRACE
         </span>
       </div>
 
-      {/* 2x2 Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex flex-col gap-4">
         {modules.map((m) => {
           const isExpanded = expandedModule === m.id;
           return (
             <div
               key={m.id}
-              onClick={() => toggleExpand(m.id)}
-              className="cursor-pointer border border-border-subtle bg-bg-secondary/40 p-5 hover:border-border-active transition-all"
+              className="flex flex-col border-b border-border-subtle pb-4 last:border-b-0"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] text-text-tertiary uppercase font-bold">
-                  {m.code} // {m.title}
-                </span>
-                <span className="text-[10px] px-1.5 py-0.5 border border-border-subtle bg-bg-primary text-text-secondary">
-                  {m.status}
-                </span>
-              </div>
-
-              {/* Dominant Monospace Score */}
-              <div className="flex items-baseline justify-between mb-4">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl sm:text-4xl font-black text-text-primary">
-                    {m.score.toFixed(1)}
+              {/* Header row */}
+              <div 
+                className="flex items-center justify-between cursor-pointer group"
+                onClick={() => toggleExpand(m.id)}
+              >
+                <div className="flex flex-col gap-1 w-1/3">
+                  <span className="text-sm font-sans font-bold text-text-primary uppercase tracking-tight group-hover:text-text-secondary transition-colors">
+                    {m.title.replace('PILLAR A: ', '').replace('PILLAR B: ', '').replace('PILLAR C: ', '').replace('PILLAR D: ', '')}
                   </span>
-                  <span className="text-xs text-text-tertiary">/ 100</span>
+                  <span className="text-xs text-text-tertiary">{m.status}</span>
                 </div>
-                <button
-                  type="button"
-                  className="text-text-tertiary hover:text-text-primary p-1"
-                >
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </button>
+                
+                {/* Horizontal Score Bar */}
+                <div className="hidden sm:flex flex-1 items-center px-6">
+                  <div className="w-full h-1 bg-border-subtle overflow-hidden">
+                    <div 
+                      className="h-full bg-text-primary transition-all duration-500" 
+                      style={{ width: `${m.score}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 w-1/4 justify-end">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl sm:text-2xl font-black text-text-primary">{m.score.toFixed(1)}</span>
+                    <span className="text-[10px] text-text-tertiary">/ 100</span>
+                  </div>
+                  <button type="button" className="text-text-tertiary group-hover:text-text-primary transition-colors">
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* 3 Driver Metrics */}
-              <div className="grid grid-cols-3 gap-2 text-[11px] pt-3 border-t border-border-subtle">
+              <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-border-subtle/30">
                 {m.drivers.map((d, i) => (
-                  <div key={i}>
-                    <span className="text-[9px] text-text-tertiary block uppercase truncate">
-                      {d.label}
-                    </span>
-                    <span className="text-text-secondary font-semibold truncate block">
-                      {d.value}
-                    </span>
+                  <div key={i} className="flex flex-col gap-0.5">
+                    <span className="text-[10px] text-text-tertiary uppercase truncate">{d.label}</span>
+                    <span className="text-xs text-text-secondary font-bold truncate">{d.value}</span>
                   </div>
                 ))}
               </div>
 
               {/* Inline Accordion Deep-Dive Table */}
               {isExpanded && (
-                <div className="mt-4 pt-3 border-t border-border-subtle space-y-2 text-xs">
-                  <div className="text-[10px] text-text-tertiary uppercase mb-1">
-                    SUB-METRIC VERIFICATION TRACE:
+                <div className="mt-4 pt-3 border-t border-border-subtle space-y-2 text-xs bg-bg-secondary p-4">
+                  <div className="text-[10px] text-text-tertiary uppercase mb-2 font-bold tracking-widest">
+                    Sub-Metric Verification Trace
                   </div>
                   {m.subMetrics.map((sm, i) => (
                     <div
                       key={i}
-                      className="flex justify-between items-center py-1 border-b border-border-subtle/50 text-[11px]"
+                      className="flex justify-between items-center py-1.5 border-b border-border-subtle/50 text-[11px] last:border-b-0"
                     >
                       <span className="text-text-secondary">{sm.label}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-text-primary font-bold">{sm.value}</span>
-                        <span className="text-text-tertiary text-[10px]">({sm.benchmark})</span>
+                        <span className="text-text-tertiary text-[10px] w-24 text-right">({sm.benchmark})</span>
                       </div>
                     </div>
                   ))}

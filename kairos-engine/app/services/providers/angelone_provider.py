@@ -96,6 +96,11 @@ class AngelOneSmartApiProvider(BaseDataProvider):
         sym = symbol.strip().upper().replace(".NS", "").replace(".BO", "")
         
         try:
+            # We must map 'sym' to an AngelOne numerical token (e.g., from OpenAPIScripMaster.json).
+            # Returning empty list to force Yahoo Finance fallback until mapping is implemented.
+            logger.warning("AngelOne OHLCV mapping not implemented for %s, falling back to YFinance", sym)
+            return []
+            
             candle_params = {
                 "exchange": "NSE",
                 "symboltoken": "3045", # Placeholder token or mapped token

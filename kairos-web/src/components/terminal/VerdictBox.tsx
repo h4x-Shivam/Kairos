@@ -33,24 +33,21 @@ export function VerdictBox({
 }: VerdictBoxProps) {
   const isTier1Critical = ruleApplied === "TIER_1_HARD_GOVERNANCE_BYPASS";
 
-  // Determine Severity Styling Ladder (UI_UX.md Section 5)
-  const getVerdictStyle = () => {
-    if (isTier1Critical) {
-      return "bg-signal-critical text-text-primary border-signal-critical";
-    }
+  const getIndicatorColor = () => {
+    if (isTier1Critical) return "bg-signal-critical";
     switch (action) {
       case "HOLD":
-        return "bg-transparent text-signal-good border-signal-good";
+        return "bg-signal-hold";
       case "TIGHTEN_STOP":
-        return "bg-transparent text-text-primary border-grey-500";
+        return "bg-signal-tighten";
       case "TRIM_25":
-        return "bg-grey-500 text-text-primary border-grey-500";
+        return "bg-signal-trim25";
       case "TRIM_50":
-        return "bg-grey-900 text-text-primary border-grey-700 font-black";
+        return "bg-signal-trim50";
       case "EXIT_FULLY":
-        return "bg-bg-primary text-text-primary border-border-active tracking-wider font-black";
+        return "bg-signal-exit";
       default:
-        return "bg-transparent text-text-primary border-border-subtle";
+        return "bg-grey-500";
     }
   };
 
@@ -60,88 +57,40 @@ export function VerdictBox({
   };
 
   return (
-    <div
-      className={`relative w-full border p-6 transition-all ${
-        isTier1Critical
-          ? "border-signal-critical bg-signal-critical/10"
-          : "border-border-subtle bg-bg-secondary/60"
-      }`}
-    >
-      {/* Top Header: Metadata & Horizon Toggle */}
-      <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-border-subtle flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono uppercase text-text-tertiary">
-            // DIAGNOSTIC VERDICT
-          </span>
-          {isTier1Critical && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 bg-signal-critical text-text-primary uppercase font-bold">
-              GOVERNANCE BYPASS
-            </span>
-          )}
-        </div>
-
-        {/* Horizon Toggle */}
-        <div className="flex items-center gap-1 border border-border-subtle bg-bg-primary p-0.5 text-[10px] font-mono">
-          <button
-            type="button"
-            onClick={() => onToggleHorizon?.("SWING")}
-            className={`px-2 py-0.5 transition-colors ${
-              horizonMode === "SWING"
-                ? "bg-grey-700 text-text-primary font-bold"
-                : "text-text-tertiary hover:text-text-secondary"
-            }`}
-          >
-            SWING
-          </button>
-          <button
-            type="button"
-            onClick={() => onToggleHorizon?.("COMPOUNDER")}
-            className={`px-2 py-0.5 transition-colors ${
-              horizonMode === "COMPOUNDER"
-                ? "bg-grey-700 text-text-primary font-bold"
-                : "text-text-tertiary hover:text-text-secondary"
-            }`}
-          >
-            COMPOUNDER
-          </button>
+    <div className="w-full flex flex-col gap-6 py-6 border-b border-border-subtle">
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-mono font-bold tracking-widest text-text-tertiary uppercase">
+          Diagnostic Verdict
+        </span>
+        
+        <div className="flex items-center gap-4 mt-2">
+          <div className={`w-3 h-3 rounded-full ${getIndicatorColor()}`} />
+          <h2 className={`font-sans text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-text-primary`}>
+            {getVerdictLabel()}
+          </h2>
         </div>
       </div>
 
-      {/* Dominant Verdict Block */}
-      <div className="my-4">
-        <div
-          className={`inline-block px-5 py-2.5 border text-3xl sm:text-4xl md:text-5xl font-mono tracking-tight ${getVerdictStyle()}`}
-        >
-          {getVerdictLabel()}
-        </div>
-      </div>
-
-      {/* Composite Score & Explanatory Reasoning */}
-      <div className="space-y-3 mt-4">
-        <div className="flex items-baseline gap-3">
-          <span className="font-mono text-2xl sm:text-3xl font-black text-text-primary">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-6 mt-2">
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono text-3xl font-black text-text-primary">
             {scores.s_composite.toFixed(1)}
           </span>
-          <span className="font-mono text-xs text-text-tertiary">/ 100 COMPOSITE SCORE</span>
+          <span className="font-mono text-xs text-text-tertiary">/ 100</span>
         </div>
 
-        <p className="text-xs sm:text-sm font-sans text-text-secondary leading-relaxed">
+        <div className="w-px h-8 bg-border-subtle hidden sm:block" />
+
+        <p className="text-sm md:text-base font-sans text-text-secondary leading-relaxed max-w-3xl">
           {explanation}
         </p>
-
-        {/* 2D Precedence Weights & Rule Tag */}
-        <div className="pt-3 border-t border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] font-mono text-text-tertiary">
-          <div>
-            WEIGHTS: FUND {(weights.w_fund * 100).toFixed(0)}% · TECH {(weights.w_tech * 100).toFixed(0)}% · QUANT {(weights.w_quant * 100).toFixed(0)}% · NEWS {(weights.w_news * 100).toFixed(0)}%
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 border border-border-subtle bg-bg-primary text-text-secondary">
-              {ruleApplied}
-            </span>
-            <span>{formatTimestamp(evaluatedEpoch)}</span>
-          </div>
-        </div>
       </div>
+      
+      {isTier1Critical && (
+        <div className="inline-block px-3 py-1 bg-signal-critical/10 border border-signal-critical text-signal-critical text-xs font-bold uppercase mt-2 w-max">
+          Governance Bypass Engaged
+        </div>
+      )}
     </div>
   );
 }

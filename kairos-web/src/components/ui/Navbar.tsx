@@ -17,9 +17,9 @@ export function Navbar({ horizonMode, onToggleHorizon }: NavbarProps) {
     <header className="sticky top-0 z-50 w-full bg-transparent px-6 sm:px-12 py-6 flex items-center justify-between select-none">
       {/* Left Wordmark: svxm */}
       <div className="flex-1 flex justify-start">
-        <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
-          <span className="font-display text-3xl sm:text-4xl md:text-[46px] tracking-wide text-text-primary lowercase leading-none block">
-            svxm
+        <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
+          <span className="font-sans text-xl font-bold tracking-tight text-text-primary block">
+            Kairos
           </span>
         </Link>
       </div>
@@ -29,11 +29,8 @@ export function Navbar({ horizonMode, onToggleHorizon }: NavbarProps) {
         <FancyToggle mode={horizonMode} onChange={onToggleHorizon} />
       </div>
 
-      {/* Right Wordmark: dev */}
+      {/* Right Wordmark: */}
       <div className="flex-1 flex justify-end">
-        <span className="font-display text-3xl sm:text-4xl md:text-[46px] tracking-wide text-text-primary lowercase leading-none block">
-          dev
-        </span>
       </div>
     </header>
   );

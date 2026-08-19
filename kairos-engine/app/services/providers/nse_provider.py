@@ -1,7 +1,7 @@
 """NSE India direct data provider adapter for live delivery percentage and market quotes."""
 import logging
 from typing import List, Dict, Any, Optional
-import httpx
+from curl_cffi import requests
 from app.schemas.enums import TimeFrame
 from app.schemas.diagnostic import (
     OHLCVBar,
@@ -31,19 +31,19 @@ class NSEDirectProvider(BaseDataProvider):
     
     def __init__(self, timeout: float = 6.0):
         self.timeout = timeout
-        self._session: Optional[httpx.Client] = None
+        self._session: Optional[requests.Session] = None
         
     @property
     def provider_name(self) -> str:
         return "NSEDirectProvider"
         
-    def _get_client(self) -> httpx.Client:
+    def _get_client(self) -> requests.Session:
         """Create or return an active HTTP client with fresh NSE session cookies."""
-        if self._session is None or self._session.is_closed:
-            self._session = httpx.Client(
+        if self._session is None:
+            self._session = requests.Session(
+                impersonate="chrome",
                 headers=NSE_HEADERS,
                 timeout=self.timeout,
-                follow_redirects=True,
             )
             try:
                 # Prime session cookies
@@ -110,5 +110,5 @@ class NSEDirectProvider(BaseDataProvider):
         
     def close(self):
         """Close active HTTP client session."""
-        if self._session and not self._session.is_closed:
+        if self._session:
             self._session.close()

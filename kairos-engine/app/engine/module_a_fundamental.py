@@ -78,11 +78,21 @@ def compute_fundamental_score(fund: FundamentalMetricsInput) -> float:
     s_fcf = score_fcf_conversion(fund.fcf_to_net_profit)
     s_de = score_debt_to_equity(fund.debt_to_equity)
     
-    score = (
-        0.25 * s_peg +
-        0.25 * s_roce +
-        0.20 * s_pledge +
-        0.15 * s_fcf +
-        0.15 * s_de
-    )
+    if fund.peg_ratio is not None:
+        score = (
+            0.25 * s_peg +
+            0.25 * s_roce +
+            0.20 * s_pledge +
+            0.15 * s_fcf +
+            0.15 * s_de
+        )
+    else:
+        # Redistribute PEG's 25% weight across remaining 75%
+        # ROCE: 25/75 = 33.33%, Pledge: 20/75 = 26.67%, FCF: 15/75 = 20%, DE: 15/75 = 20%
+        score = (
+            0.3333 * s_roce +
+            0.2667 * s_pledge +
+            0.2000 * s_fcf +
+            0.2000 * s_de
+        )
     return round(float(score), 1)

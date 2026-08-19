@@ -12,6 +12,7 @@ def test_quarter_kelly_calculation():
         current_price=1000.0,
         chandelier_stop=900.0,
         consensus_target_price=1300.0,
+        atr=40.0,
         win_rate=0.55,
     )
     assert telemetry.reward_delta == 300.0
@@ -25,6 +26,7 @@ def test_quarter_kelly_negative_expectation():
     telemetry = compute_risk_reward_and_kelly(
         current_price=1000.0,
         chandelier_stop=700.0, # Risk = 300
+        atr=40.0,
         consensus_target_price=1050.0, # Reward = 50 -> R:R = 0.17
     )
     assert telemetry.quarter_kelly_pct == 0.0
@@ -79,3 +81,15 @@ def test_indian_tax_ltcg_with_exemption():
     assert result["tax_rate_pct"] == 12.5
     assert result["tax_liability"] == 15625.0
     assert result["net_cash_realized"] == 484375.0
+
+def test_indian_tax_stcg_boundary_12_months():
+    """Verify holding exactly 12 months is treated as STCG under Indian tax law."""
+    result = simulate_trim_execution(
+        shares_held=100,
+        buy_price=500.0,
+        current_price=1000.0,
+        trim_percentage=25.0,
+        holding_period_months=12, # Exactly 12 -> STCG
+    )
+    assert result["tax_type"] == "STCG"
+    assert result["tax_rate_pct"] == 20.0

@@ -108,6 +108,18 @@ class RiskRewardTelemetry(BaseModel):
     quarter_kelly_pct: float
 
 
+class ChartDataPoint(BaseModel):
+    """Single point in time containing actual price and calculated stop-loss."""
+    model_config = ConfigDict(frozen=True)
+    
+    time: int
+    open: float
+    high: float
+    low: float
+    close: float
+    stop: float
+
+
 class DiagnosticInput(BaseModel):
     """Canonical input payload required for full diagnostic evaluation."""
     model_config = ConfigDict(frozen=True)
@@ -141,6 +153,11 @@ class DiagnosticOutput(BaseModel):
     weights: PrecedenceWeights
     stop_telemetry: StopLossTelemetry
     risk_telemetry: RiskRewardTelemetry
+    fundamentals: FundamentalMetricsInput
+    technicals: TechnicalMetricsInput
+    quant: QuantMetricsInput
+    disclosures: List[SentimentDisclosureInput]
+    chart_data: List[ChartDataPoint]
     audit_hash: str
     evaluated_at_epoch: int
     tax_impact: Optional[Dict[str, Any]] = None

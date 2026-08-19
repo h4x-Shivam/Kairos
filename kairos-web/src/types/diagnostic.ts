@@ -50,6 +50,44 @@ export interface RiskRewardTelemetry {
   quarter_kelly_pct: number;
 }
 
+export interface ChartDataPoint {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  stop: number;
+}
+
+export interface FundamentalMetrics {
+  peg_ratio: number | null;
+  roce_current: number;
+  roce_3q_avg: number;
+  promoter_pledge_pct: number;
+  fcf_to_net_profit: number;
+  debt_to_equity: number;
+}
+
+export interface TechnicalMetrics {
+  sma_50: number;
+  sma_200: number;
+  rsi_14: number;
+  delivery_pct: number;
+}
+
+export interface QuantMetrics {
+  high_52w: number;
+  realized_volatility_1y: number;
+  beta: number;
+}
+
+export interface SentimentDisclosureInput {
+  headline: string;
+  hours_ago: number;
+  sentiment_score: number;
+  is_tier1_trigger: boolean;
+}
+
 export interface TaxImpactResult {
   shares_held: number;
   shares_to_sell: number;
@@ -78,6 +116,11 @@ export interface DiagnosticOutput {
   weights: PrecedenceWeights;
   stop_telemetry: StopLossTelemetry;
   risk_telemetry: RiskRewardTelemetry;
+  fundamentals: FundamentalMetrics;
+  technicals: TechnicalMetrics;
+  quant: QuantMetrics;
+  disclosures: SentimentDisclosureInput[];
+  chart_data: ChartDataPoint[];
   audit_hash: string;
   evaluated_at_epoch: number;
   tax_impact?: TaxImpactResult | null;

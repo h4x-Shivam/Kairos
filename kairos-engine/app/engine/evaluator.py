@@ -6,6 +6,7 @@ from app.schemas.diagnostic import (
     DiagnosticOutput,
     ScoreCard,
     StopLossTelemetry,
+    ChartDataPoint,
 )
 from app.engine.precedence_grid import resolve_precedence_grid
 from app.engine.indicators import (
@@ -46,9 +47,10 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
     current_atr = float(atrs[-1])
     current_hh = float(highest_highs[-1])
     
-    # Stop cushion calculation (% distance from current price down to stop)
+    # Stop cushion calculation (% distance from current price down to stop) with ATR floor
     if diag_input.current_price > 0:
-        cushion_pct = ((current_stop - diag_input.current_price) / diag_input.current_price) * 100.0
+        floored_risk_delta = max(0.50, diag_input.current_price - current_stop, 0.5 * current_atr)
+        cushion_pct = (floored_risk_delta / diag_input.current_price) * 100.0
     else:
         cushion_pct = 0.0
         
@@ -80,6 +82,7 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
         current_price=diag_input.current_price,
         chandelier_stop=current_stop,
         consensus_target_price=diag_input.consensus_target_price,
+        atr=current_atr,
     )
     
     # 6. Asymmetric Conflict Resolution State Machine
@@ -128,6 +131,25 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
     }
     audit_hash = generate_sebi_audit_hash(audit_payload)
     
+    # 8. Compile Chart Data for UI (subset of last N bars for visualization)
+    chart_data = []
+    # Only take the recent bars that have valid stop calculation
+    start_idx = max(22, 14) - 1 # from indicators.py start_idx
+    for i in range(start_idx, len(diag_input.bars)):
+        b = diag_input.bars[i]
+        chart_data.append(
+            ChartDataPoint(
+                time=b.time,
+                open=round(b.open, 2),
+                high=round(b.high, 2),
+                low=round(b.low, 2),
+                close=round(b.close, 2),
+                stop=round(float(stops[i]), 2)
+            )
+        )
+    # Take at most last 90 days for frontend rendering
+    chart_data = chart_data[-90:]
+    
     return DiagnosticOutput(
         symbol=diag_input.symbol,
         company_name=diag_input.company_name,
@@ -140,6 +162,11 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
         weights=weights,
         stop_telemetry=stop_telemetry,
         risk_telemetry=risk_telemetry,
+        fundamentals=diag_input.fundamentals,
+        technicals=diag_input.technicals,
+        quant=diag_input.quant,
+        disclosures=diag_input.disclosures,
+        chart_data=chart_data,
         audit_hash=audit_hash,
         evaluated_at_epoch=epoch_now,
     )

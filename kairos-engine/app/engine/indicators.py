@@ -81,8 +81,14 @@ def compute_chandelier_stop_series(
         if i == start_idx:
             ratcheted_stops[i] = raw_stop
         else:
-            # Monotonic ratchet: Trailing stop only moves up, never down
-            ratcheted_stops[i] = max(ratcheted_stops[i - 1], raw_stop)
+            # Monotonic ratchet: Trailing stop only moves up, never down.
+            # However, if the previous bar closed below the previous stop (a breach),
+            # a real user would have exited. Thus, we reset the ratchet to prevent 
+            # locking in stale high-water marks over long stateless periods.
+            if closes[i - 1] < ratcheted_stops[i - 1]:
+                ratcheted_stops[i] = raw_stop
+            else:
+                ratcheted_stops[i] = max(ratcheted_stops[i - 1], raw_stop)
             
     return ratcheted_stops, atr, highest_highs
 

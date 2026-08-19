@@ -11,7 +11,16 @@ export function TrimSimulator({ currentPrice }: TrimSimulatorProps) {
   const [holdingShares, setHoldingShares] = useState(100);
   const [buyPrice, setBuyPrice] = useState(Math.round(currentPrice * 0.78));
   const [trimPct, setTrimPct] = useState(25);
-  const [holdingMonths, setHoldingMonths] = useState(14);
+  const [buyDate, setBuyDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().split("T")[0];
+  });
+
+  // Calculate holding months from buy date
+  const parsedBuyDate = new Date(buyDate);
+  const now = new Date();
+  const holdingMonths = Math.max(1, (now.getFullYear() - parsedBuyDate.getFullYear()) * 12 + (now.getMonth() - parsedBuyDate.getMonth()));
 
   // Real-time calculation logic based on Indian Finance Act 2024
   const sharesToSell = Math.max(1, Math.round(holdingShares * (trimPct / 100)));
@@ -33,69 +42,68 @@ export function TrimSimulator({ currentPrice }: TrimSimulatorProps) {
   const downsideCushion = newBreakeven > 0 ? ((currentPrice - newBreakeven) / currentPrice) * 100 : 100;
 
   return (
-    <div className="w-full border border-border-subtle bg-bg-secondary/40 p-5 font-mono">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
-        <span className="text-xs uppercase text-text-tertiary">
-          // EXECUTION SIMULATOR (WHAT IF I TRIM NOW?)
+    <div className="w-full font-mono flex flex-col gap-6 py-4 border-b border-border-subtle pb-8">
+      <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+        <span className="text-[10px] uppercase text-text-tertiary tracking-widest">
+          Execution Simulator
         </span>
-        <span className="text-[10px] px-1.5 py-0.5 border border-border-subtle bg-bg-primary text-text-secondary">
-          FINANCE ACT 2024 POST-TAX
+        <span className="text-[10px] text-text-tertiary">
+          POST-TAX (FINANCE ACT 2024)
         </span>
       </div>
 
       {/* Input Controls */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <div>
-          <label className="text-[10px] text-text-tertiary uppercase block mb-1">
-            SHARES HELD
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-2">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-text-tertiary uppercase tracking-widest">
+            Shares Held
           </label>
           <input
             type="number"
             value={holdingShares}
             onChange={(e) => setHoldingShares(Math.max(1, parseInt(e.target.value) || 0))}
-            className="w-full bg-bg-primary border border-border-subtle text-text-primary text-xs px-3 py-2 focus:border-border-active focus:outline-none"
+            className="w-full bg-transparent border-b border-border-subtle text-text-primary text-sm py-1.5 font-mono focus:border-border-active focus:outline-none transition-colors"
           />
         </div>
 
-        <div>
-          <label className="text-[10px] text-text-tertiary uppercase block mb-1">
-            BUY PRICE (₹)
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-text-tertiary uppercase tracking-widest">
+            Buy Price (₹)
           </label>
           <input
             type="number"
             value={buyPrice}
             onChange={(e) => setBuyPrice(Math.max(1, parseFloat(e.target.value) || 0))}
-            className="w-full bg-bg-primary border border-border-subtle text-text-primary text-xs px-3 py-2 focus:border-border-active focus:outline-none"
+            className="w-full bg-transparent border-b border-border-subtle text-text-primary text-sm py-1.5 font-mono focus:border-border-active focus:outline-none transition-colors"
           />
         </div>
 
-        <div>
-          <label className="text-[10px] text-text-tertiary uppercase block mb-1">
-            HOLDING (MONTHS)
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-text-tertiary uppercase tracking-widest">
+            Buy Date
           </label>
           <input
-            type="number"
-            value={holdingMonths}
-            onChange={(e) => setHoldingMonths(Math.max(1, parseInt(e.target.value) || 0))}
-            className="w-full bg-bg-primary border border-border-subtle text-text-primary text-xs px-3 py-2 focus:border-border-active focus:outline-none"
+            type="date"
+            value={buyDate}
+            onChange={(e) => setBuyDate(e.target.value)}
+            className="w-full bg-transparent border-b border-border-subtle text-text-primary text-sm py-1.5 font-mono focus:border-border-active focus:outline-none transition-colors"
           />
         </div>
 
-        <div>
-          <label className="text-[10px] text-text-tertiary uppercase block mb-1">
-            TRIM FRACTION
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-text-tertiary uppercase tracking-widest">
+            Trim Fraction
           </label>
-          <div className="flex gap-1">
+          <div className="flex gap-2 pt-1">
             {[25, 50, 100].map((pct) => (
               <button
                 key={pct}
                 type="button"
                 onClick={() => setTrimPct(pct)}
-                className={`flex-1 py-1.5 text-xs transition-colors border ${
+                className={`flex-1 py-1 text-[11px] rounded transition-colors ${
                   trimPct === pct
-                    ? "border-text-primary bg-grey-700 text-text-primary font-bold"
-                    : "border-border-subtle bg-bg-primary text-text-secondary"
+                    ? "bg-bg-primary border border-border-active text-text-primary font-bold shadow-sm"
+                    : "bg-bg-secondary border border-border-subtle text-text-secondary hover:text-text-primary"
                 }`}
               >
                 {pct}%
@@ -105,49 +113,49 @@ export function TrimSimulator({ currentPrice }: TrimSimulatorProps) {
         </div>
       </div>
 
-      {/* Tabular Output Ledger (Strict Grayscale Monospace) */}
-      <div className="border-t border-border-subtle pt-4 divide-y divide-border-subtle/60 text-xs">
-        <div className="flex justify-between py-1.5">
-          <span className="text-text-secondary">SHARES TO SELL / RETAINED</span>
-          <span className="text-text-primary font-bold">
-            {sharesToSell} Sold / {sharesRetained} Retained
+      {/* Tabular Output Ledger */}
+      <div className="border border-border-subtle bg-bg-secondary p-4 mt-2 divide-y divide-border-subtle/50 text-xs">
+        <div className="flex justify-between items-center py-2.5 pt-1">
+          <span className="text-text-secondary uppercase">Shares Sold / Retained</span>
+          <span className="text-text-primary font-bold tabular-nums">
+            {sharesToSell} / {sharesRetained}
           </span>
         </div>
 
-        <div className="flex justify-between py-1.5">
-          <span className="text-text-secondary">GROSS CASH PROCEEDS</span>
-          <span className="text-text-primary font-bold">
+        <div className="flex justify-between items-center py-2.5">
+          <span className="text-text-secondary uppercase">Gross Cash Proceeds</span>
+          <span className="text-text-primary font-bold tabular-nums">
             {formatCurrency(grossProceeds)}
           </span>
         </div>
 
-        <div className="flex justify-between py-1.5">
-          <span className="text-text-secondary">REALIZED CAPITAL GAIN</span>
-          <span className="text-text-primary font-bold">
+        <div className="flex justify-between items-center py-2.5">
+          <span className="text-text-secondary uppercase">Realized Capital Gain</span>
+          <span className="text-text-primary font-bold tabular-nums">
             {formatCurrency(capitalGain)}
           </span>
         </div>
 
-        <div className="flex justify-between py-1.5">
-          <span className="text-text-secondary">ESTIMATED TAX ({taxType})</span>
-          <span className="text-text-secondary">
+        <div className="flex justify-between items-center py-2.5">
+          <span className="text-text-secondary uppercase">Estimated Tax ({taxType})</span>
+          <span className="text-signal-exit tabular-nums">
             - {formatCurrency(estimatedTax)}
           </span>
         </div>
 
-        <div className="flex justify-between py-2 border-t border-b border-border-subtle font-bold">
-          <span className="text-text-primary">NET CASH ADDED TO WALLET</span>
-          <span className="text-text-primary text-sm">
+        <div className="flex justify-between items-center py-3 border-t border-border-active">
+          <span className="text-text-primary uppercase font-bold">Net Cash Added to Wallet</span>
+          <span className="text-text-primary text-lg font-black tabular-nums">
             {formatCurrency(netCash)}
           </span>
         </div>
+      </div>
 
-        <div className="flex justify-between py-2 text-text-secondary">
-          <span>NEW EFFECTIVE BREAKEVEN PRICE</span>
-          <span className="text-text-primary font-bold">
-            {formatCurrency(newBreakeven)} / share ({formatPercent(downsideCushion)} Cushion)
-          </span>
-        </div>
+      <div className="flex justify-between items-center py-2 text-xs text-text-secondary">
+        <span className="uppercase">New Effective Breakeven</span>
+        <span className="text-text-primary font-bold tabular-nums">
+          {formatCurrency(newBreakeven)} <span className="text-text-tertiary font-normal">/ share</span> ({formatPercent(downsideCushion)} cushion)
+        </span>
       </div>
     </div>
   );

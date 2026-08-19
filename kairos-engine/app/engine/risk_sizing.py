@@ -6,6 +6,7 @@ from app.schemas.diagnostic import RiskRewardTelemetry
 def compute_risk_reward_and_kelly(
     current_price: float,
     chandelier_stop: float,
+    atr: float,
     consensus_target_price: Optional[float] = None,
     win_rate: float = 0.55,
 ) -> RiskRewardTelemetry:
@@ -24,7 +25,8 @@ def compute_risk_reward_and_kelly(
         target_price = round(current_price * 1.15, 2)
         
     reward_delta = max(0.0, target_price - current_price)
-    risk_delta = max(0.50, current_price - chandelier_stop)
+    # 1. Floor risk denominator using max(0.50, price - stop, 0.5 * atr)
+    risk_delta = max(0.50, current_price - chandelier_stop, 0.5 * atr)
     
     # 2. Risk-Reward Ratio with Target Anomaly Guard
     if risk_delta <= 0.0:

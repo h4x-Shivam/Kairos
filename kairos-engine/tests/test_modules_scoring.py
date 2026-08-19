@@ -80,6 +80,19 @@ def test_fundamental_scoring_branches():
     score = compute_fundamental_score(fund_input)
     assert score == 100.0
 
+    # Test redistribution when peg_ratio is None
+    fund_input_no_peg = FundamentalMetricsInput(
+        peg_ratio=None,
+        roce_current=22.0,
+        roce_3q_avg=19.0,
+        promoter_pledge_pct=0.0,
+        fcf_to_net_profit=0.95,
+        debt_to_equity=0.1,
+    )
+    score_no_peg = compute_fundamental_score(fund_input_no_peg)
+    # Expected: 0.3333 * 100 + 0.2667 * 100 + 0.2 * 100 + 0.2 * 100 = 100.0
+    assert score_no_peg == 100.0
+
 
 def test_technical_scoring_branches():
     """Verify all conditional branches for Module B."""

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Copy, Check, ShieldCheck } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { truncateHash } from "@/lib/formatters";
+import { truncateHash, formatTimestamp } from "@/lib/formatters";
 import { DiagnosticOutput } from "@/types/diagnostic";
 
 interface AuditFooterProps {
@@ -12,6 +12,7 @@ interface AuditFooterProps {
 
 export function AuditFooter({ diagnostic }: AuditFooterProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTraceOpen, setIsTraceOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -22,40 +23,83 @@ export function AuditFooter({ diagnostic }: AuditFooterProps) {
 
   return (
     <>
-      <footer className="w-full border-t border-border-subtle bg-bg-secondary/40 px-4 sm:px-8 py-6 font-mono text-xs text-text-secondary">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* SEBI Compliance Statement */}
-          <div className="max-w-xl text-[11px] leading-relaxed text-text-secondary">
-            <span className="text-text-primary font-bold mr-1">// REGULATORY NOTICE:</span>
-            Kairos is a deterministic mathematical diagnostic sandbox. Not SEBI registered investment advice. Historical algorithms do not guarantee future returns.
+      <footer className="w-full mt-12 mb-8 font-mono text-xs text-text-secondary border-t border-border-subtle pt-6">
+        <div className="flex flex-col gap-6 max-w-5xl">
+          
+          {/* Provenance Trace Toggle */}
+          <div>
+            <button
+              onClick={() => setIsTraceOpen(!isTraceOpen)}
+              className="flex items-center gap-2 text-text-primary font-bold uppercase hover:opacity-80 transition-opacity"
+            >
+              {isTraceOpen ? "− HIDE CALCULATION TRACE" : "+ VIEW CALCULATION TRACE"}
+            </button>
+            
+            {isTraceOpen && (
+              <div className="mt-4 p-4 bg-bg-secondary border border-border-subtle space-y-4 text-xs font-mono">
+                <div>
+                  <span className="text-text-tertiary">RULE APPLIED:</span>{" "}
+                  <span className="text-text-primary font-bold">{diagnostic.rule_applied}</span>
+                </div>
+                <div>
+                  <span className="text-text-tertiary">EVALUATED AT:</span>{" "}
+                  <span className="text-text-primary">{formatTimestamp(diagnostic.evaluated_at_epoch)}</span>
+                </div>
+                <div>
+                  <span className="text-text-tertiary">PRECEDENCE WEIGHTS:</span>
+                  <div className="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="p-2 border border-border-subtle bg-bg-primary">
+                      FUND: {(diagnostic.weights.w_fund * 100).toFixed(0)}%
+                    </div>
+                    <div className="p-2 border border-border-subtle bg-bg-primary">
+                      TECH: {(diagnostic.weights.w_tech * 100).toFixed(0)}%
+                    </div>
+                    <div className="p-2 border border-border-subtle bg-bg-primary">
+                      QUANT: {(diagnostic.weights.w_quant * 100).toFixed(0)}%
+                    </div>
+                    <div className="p-2 border border-border-subtle bg-bg-primary">
+                      NEWS: {(diagnostic.weights.w_news * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Cryptographic SHA-256 Verification Action */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 border border-border-subtle bg-bg-primary px-3 py-1.5 text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5 text-text-secondary" />
-              <span className="text-text-tertiary">HASH:</span>
-              <span className="text-text-primary font-bold">
-                {truncateHash(diagnostic.audit_hash, 8, 8)}
-              </span>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            {/* SEBI Compliance Statement */}
+            <div className="max-w-xl text-[11px] leading-relaxed text-text-secondary">
+              <span className="text-text-primary font-bold mr-1">REGULATORY NOTICE &middot;</span>
+              Kairos is a deterministic mathematical diagnostic sandbox. Not SEBI registered investment advice. Historical algorithms do not guarantee future returns.
             </div>
 
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="p-1.5 border border-border-subtle bg-bg-secondary hover:border-border-active transition-colors text-text-secondary hover:text-text-primary"
-              title="Copy SHA-256 Hash"
-            >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            {/* Cryptographic SHA-256 Verification Action */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-text-tertiary">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>HASH:</span>
+                <span className="text-text-secondary">
+                  {truncateHash(diagnostic.audit_hash, 8, 8)}
+                </span>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="px-2.5 py-1.5 border border-border-subtle bg-bg-secondary hover:border-border-active transition-colors text-[11px] text-text-primary font-bold"
-            >
-              INSPECT JSON
-            </button>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="p-1.5 text-text-tertiary hover:text-text-primary transition-colors"
+                title="Copy SHA-256 Hash"
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="px-2.5 py-1.5 text-[11px] text-text-primary font-bold hover:bg-bg-secondary transition-colors"
+              >
+                INSPECT JSON
+              </button>
+            </div>
           </div>
         </div>
       </footer>

@@ -1,5 +1,5 @@
-"""Stock search autocomplete endpoint across NSE/BSE equities."""
 from typing import List, Optional
+import requests
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from app.schemas.enums import MarketCapBucket
@@ -47,6 +47,7 @@ _STOCK_DATABASE: List[StockSearchResult] = [
     StockSearchResult(symbol="KPITTECH", company_name="KPIT Technologies Limited", exchange="NSE", market_cap_bucket=MarketCapBucket.MID_CAP, sector="IT / Auto Tech"),
     StockSearchResult(symbol="TATAELXSI", company_name="Tata Elxsi Limited", exchange="NSE", market_cap_bucket=MarketCapBucket.MID_CAP, sector="Design & Tech"),
     StockSearchResult(symbol="MAPMYINDIA", company_name="C.E. Info Systems Limited", exchange="NSE", market_cap_bucket=MarketCapBucket.SMALL_CAP, sector="Geospatial / Tech"),
+    StockSearchResult(symbol="BLUESTONE", company_name="BlueStone Jewellery", exchange="NSE", market_cap_bucket=MarketCapBucket.SMALL_CAP, sector="Consumer Goods"),
 ]
 
 
@@ -69,16 +70,45 @@ def search_stocks(
         if stock not in matches and (query in stock.symbol or query in stock.company_name.upper()):
             matches.append(stock)
             
-    # If no matches from database, return dynamically constructed NSE ticker item
+    # If no local matches, fallback to Yahoo Finance Search API
     if not matches and len(query) >= 2:
-        matches.append(
-            StockSearchResult(
-                symbol=query,
-                company_name=f"{query} Equity",
-                exchange="NSE",
-                market_cap_bucket=MarketCapBucket.LARGE_CAP,
-                sector="Indian Equity",
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            r = requests.get(
+                f"https://query2.finance.yahoo.com/v1/finance/search?q={query}&quotesCount=5&newsCount=0",
+                headers=headers,
+                timeout=3,
             )
-        )
-        
+            data = r.json()
+            quotes = data.get("quotes", [])
+            for q_item in quotes:
+                sym = q_item.get("symbol", "")
+                if sym.endswith(".NS") or sym.endswith(".BO"):
+                    clean_sym = sym.replace(".NS", "").replace(".BO", "")
+                    # Avoid duplicates
+                    if not any(m.symbol == clean_sym for m in matches):
+                        matches.append(
+                            StockSearchResult(
+                                symbol=clean_sym,
+                                company_name=q_item.get("shortname", f"{clean_sym} Equity"),
+                                exchange="NSE" if sym.endswith(".NS") else "BSE",
+                                market_cap_bucket=MarketCapBucket.LARGE_CAP, # Default bucket
+                                sector=q_item.get("sectorDisp", "Indian Equity"),
+                            )
+                        )
+        except Exception:
+            pass # Silently fail and return empty if YF API fails
+            
+        # Very last resort if YF returns nothing but user typed something that looks like a ticker
+        if not matches and len(query.split()) == 1:
+             matches.append(
+                StockSearchResult(
+                    symbol=query,
+                    company_name=f"{query} Equity",
+                    exchange="NSE",
+                    market_cap_bucket=MarketCapBucket.LARGE_CAP,
+                    sector="Indian Equity",
+                )
+            )
+            
     return matches[:limit]

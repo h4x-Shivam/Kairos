@@ -36,7 +36,6 @@ def test_data_aggregator_build_payload(mocker):
     payload = aggregator.build_diagnostic_input(
         symbol="TATAMOTORS",
         horizon_mode=HorizonMode.COMPOUNDER,
-        market_cap_bucket=MarketCapBucket.LARGE_CAP,
     )
     
     assert payload.symbol == "TATAMOTORS"

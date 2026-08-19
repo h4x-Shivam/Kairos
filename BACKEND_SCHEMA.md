@@ -468,7 +468,8 @@ VALUES
     ('TATAMOTORS.NS', 'Tata Motors Ltd', 'INE155A01022', 'NSE', 'Automobile', 'Commercial & Passenger Vehicles', 'LARGE_CAP', 345000.00, 1.12, TRUE),
     ('RELIANCE.NS', 'Reliance Industries Ltd', 'INE002A01018', 'NSE', 'Energy & Retail', 'Oil, Telecom & Retail', 'LARGE_CAP', 1980000.00, 0.85, TRUE),
     ('HDFCBANK.NS', 'HDFC Bank Ltd', 'INE040A01034', 'NSE', 'Banking', 'Private Banking', 'LARGE_CAP', 1250000.00, 0.92, TRUE),
-    ('SUZLON.NS', 'Suzlon Energy Ltd', 'INE040H01021', 'NSE', 'Clean Energy', 'Wind Turbines', 'SMALL_CAP', 82000.00, 1.48, TRUE)
+    ('SUZLON.NS', 'Suzlon Energy Ltd', 'INE040H01021', 'NSE', 'Clean Energy', 'Wind Turbines', 'SMALL_CAP', 82000.00, 1.48, TRUE),
+    ('BLUESTONE', 'BlueStone Jewellery', 'INE0XXX00000', 'NSE', 'Consumer Goods', 'Jewellery', 'SMALL_CAP', 4500.00, 1.15, TRUE)
 ON CONFLICT (symbol) DO NOTHING;
 
 -- Seed Fixture 2: Fundamentals for Canonical Worked Example (TATAMOTORS.NS)

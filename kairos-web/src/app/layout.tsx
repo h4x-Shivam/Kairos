@@ -33,6 +33,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`dark ${displayFont.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
       <body className="bg-bg-primary text-text-primary min-h-screen antialiased font-sans">
         {children}

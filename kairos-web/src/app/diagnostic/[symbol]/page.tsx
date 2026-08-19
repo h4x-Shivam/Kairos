@@ -20,7 +20,7 @@ interface DiagnosticPageProps {
 
 export default function DiagnosticPage({ params }: DiagnosticPageProps) {
   const resolvedParams = use(params);
-  const symbol = decodeURIComponent(resolvedParams.symbol || "TATAMOTORS").toUpperCase();
+  const symbol = decodeURIComponent(resolvedParams.symbol).toUpperCase();
   const { horizonMode, toggleHorizonMode } = useHorizonMode();
 
   const {
@@ -29,7 +29,9 @@ export default function DiagnosticPage({ params }: DiagnosticPageProps) {
     statusMessage,
     diagnosticData,
     isComplete,
-  } = useDiagnosticStream(symbol, horizonMode, "LARGE_CAP");
+  } = useDiagnosticStream(symbol, horizonMode);
+
+  const latestBar = diagnosticData?.chart_data?.[diagnosticData.chart_data.length - 1];
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary flex flex-col font-sans">
@@ -54,6 +56,9 @@ export default function DiagnosticPage({ params }: DiagnosticPageProps) {
             companyName={diagnosticData.company_name}
             marketCapBucket={diagnosticData.market_cap_bucket}
             currentPrice={diagnosticData.stop_telemetry.current_price}
+            dayHigh={latestBar?.high}
+            dayLow={latestBar?.low}
+            beta={diagnosticData.quant.beta}
           />
 
           <div className="max-w-7xl mx-auto w-full px-4 sm:px-8 py-6 space-y-6">
@@ -97,15 +102,16 @@ export default function DiagnosticPage({ params }: DiagnosticPageProps) {
                 currentPrice={diagnosticData.stop_telemetry.current_price}
                 stopPrice={diagnosticData.stop_telemetry.chandelier_stop}
                 targetPrice={diagnosticData.risk_telemetry.target_price}
+                chartData={diagnosticData.chart_data}
               />
 
-              {/* Zone 5: 4-Pillar Diagnostic Ledger Grid */}
-              <DiagnosticGrid scores={diagnosticData.scores} />
-
-              {/* Zone 6: Execution Simulator ("What If I Trim Now?") */}
+              {/* Zone 5: Execution Simulator ("What If I Trim Now?") */}
               <TrimSimulator
                 currentPrice={diagnosticData.stop_telemetry.current_price}
               />
+
+              {/* Zone 6: 4-Pillar Diagnostic Ledger Grid */}
+              <DiagnosticGrid diagnostic={diagnosticData} />
             </div>
           </div>
 

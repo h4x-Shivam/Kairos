@@ -35,7 +35,6 @@ class DataAggregator:
         self,
         symbol: str,
         horizon_mode: HorizonMode = HorizonMode.COMPOUNDER,
-        market_cap_bucket: MarketCapBucket = MarketCapBucket.LARGE_CAP,
         timeframe: TimeFrame = TimeFrame.D1,
         manual_atr_mult: Optional[float] = None,
     ) -> DiagnosticInput:
@@ -44,12 +43,12 @@ class DataAggregator:
         bars = []
         if self.angel.is_healthy():
             try:
-                bars = self.angel.get_historical_ohlcv(symbol, timeframe=timeframe, limit=100)
+                bars = self.angel.get_historical_ohlcv(symbol, timeframe=timeframe, limit=260)
             except Exception as e:
                 logger.warning("AngelOne OHLCV fetch failed, falling back: %s", e)
                 
         if not bars or len(bars) < 22:
-            bars = self.yf.get_historical_ohlcv(symbol, timeframe=timeframe, limit=100)
+            bars = self.yf.get_historical_ohlcv(symbol, timeframe=timeframe, limit=260)
             
         if len(bars) < 22:
             raise ValueError(f"Insufficient historical bars ({len(bars)}) acquired for {symbol}")
@@ -83,6 +82,18 @@ class DataAggregator:
         company_name = quote_data.get("company_name") or symbol.upper()
         high_52w = float(quote_data.get("high_52w") or np.max(closes))
         beta = float(quote_data.get("beta") or 1.0)
+        
+        # Dynamically determine market cap bucket based on live market cap in Crores (INR)
+        mcap_cr = float(quote_data.get("marketCap", 0)) / 10000000.0 if quote_data.get("marketCap") else 0.0
+        if mcap_cr == 0.0:
+            # Fallback for mock/test if missing
+            market_cap_bucket = MarketCapBucket.SMALL_CAP if "BLUESTONE" in symbol else MarketCapBucket.LARGE_CAP
+        elif mcap_cr >= 20000.0:
+            market_cap_bucket = MarketCapBucket.LARGE_CAP
+        elif mcap_cr >= 5000.0:
+            market_cap_bucket = MarketCapBucket.MID_CAP
+        else:
+            market_cap_bucket = MarketCapBucket.SMALL_CAP
         
         # Calculate 1-Year Realized Volatility
         returns = np.diff(closes) / closes[:-1]

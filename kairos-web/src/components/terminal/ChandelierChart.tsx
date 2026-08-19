@@ -3,11 +3,14 @@
 import React, { useState } from "react";
 import { formatCurrency } from "@/lib/formatters";
 
+import { ChartDataPoint } from "@/types/diagnostic";
+
 interface ChandelierChartProps {
   symbol: string;
   currentPrice: number;
   stopPrice: number;
   targetPrice: number;
+  chartData: ChartDataPoint[];
 }
 
 export function ChandelierChart({
@@ -15,25 +18,21 @@ export function ChandelierChart({
   currentPrice,
   stopPrice,
   targetPrice,
+  chartData,
 }: ChandelierChartProps) {
   const [timeframe, setTimeframe] = useState<"15m" | "1D" | "1W">("1D");
 
-  // Synthetic price points demonstrating monotonic Chandelier ratchet
-  const base = currentPrice * 0.92;
-  const candleData = [
-    { o: base, h: base + 15, l: base - 10, c: base + 8, stop: base - 25 },
-    { o: base + 8, h: base + 22, l: base + 5, c: base + 18, stop: base - 25 },
-    { o: base + 18, h: base + 35, l: base + 12, c: base + 30, stop: base - 15 },
-    { o: base + 30, h: base + 42, l: base + 20, c: base + 25, stop: base - 15 },
-    { o: base + 25, h: base + 45, l: base + 22, c: base + 40, stop: base - 5 },
-    { o: base + 40, h: base + 58, l: base + 35, c: base + 52, stop: base + 10 },
-    { o: base + 52, h: base + 65, l: base + 48, c: base + 60, stop: base + 25 },
-    { o: base + 60, h: base + 70, l: base + 55, c: base + 62, stop: base + 25 },
-    { o: base + 62, h: base + 85, l: base + 60, c: currentPrice, stop: stopPrice },
-  ];
-
-  const minPrice = Math.min(...candleData.map((c) => Math.min(c.l, c.stop))) * 0.98;
-  const maxPrice = Math.max(...candleData.map((c) => Math.max(c.h, targetPrice))) * 1.02;
+  // Use real chart data if available, fallback safely if not
+  const candles = chartData && chartData.length > 0 ? chartData : [];
+  
+  // Need min/max to scale the Y axis
+  const minPrice = candles.length > 0 
+    ? Math.min(...candles.map((c) => Math.min(c.low, c.stop))) * 0.98 
+    : currentPrice * 0.9;
+  const maxPrice = candles.length > 0 
+    ? Math.max(...candles.map((c) => Math.max(c.high, targetPrice))) * 1.02
+    : currentPrice * 1.1;
+    
   const priceRange = maxPrice - minPrice || 1;
 
   const getY = (price: number) => {
@@ -41,14 +40,14 @@ export function ChandelierChart({
   };
 
   return (
-    <div className="w-full border border-border-subtle bg-bg-secondary/40 p-5 font-mono">
+    <div className="w-full font-mono flex flex-col gap-6 py-4">
       {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border-subtle">
         <div className="flex items-center gap-3">
-          <span className="text-xs uppercase text-text-tertiary">
-            // CHANDELIER VOLATILITY RATCHET
+          <span className="text-[10px] uppercase text-text-tertiary tracking-widest">
+            Chandelier Volatility Ratchet
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 border border-border-subtle bg-bg-primary text-text-secondary">
+          <span className="text-[10px] text-text-tertiary">
             {symbol} • {timeframe}
           </span>
         </div>
@@ -75,45 +74,52 @@ export function ChandelierChart({
       {/* SVG Canvas Chart */}
       <div className="relative w-full h-56 sm:h-64">
         <svg className="w-full h-full" viewBox="0 0 500 220" preserveAspectRatio="none">
-          {/* Target Price Line (Dashed Grayscale) */}
+          {/* Target Price Line */}
           <line
             x1="0"
             y1={getY(targetPrice)}
             x2="500"
             y2={getY(targetPrice)}
-            stroke="#737373"
+            stroke="#9CA3AF"
             strokeWidth="1"
             strokeDasharray="4 4"
           />
 
           {/* 50 DMA Baseline Curve */}
           <path
-            d={`M 0 ${getY(base)} Q 250 ${getY(base + 30)} 500 ${getY(currentPrice * 0.97)}`}
+            d={`M 0 ${getY(candles.length > 0 ? candles[0].close * 0.95 : currentPrice)} Q 250 ${getY(currentPrice * 0.95)} 500 ${getY(currentPrice * 0.97)}`}
             fill="none"
-            stroke="#404040"
+            stroke="#E5E7EB"
             strokeWidth="1.5"
           />
 
           {/* Ratcheting Chandelier Stop Step-Line */}
           <polyline
-            points={candleData
-              .map((c, i) => `${i * 55 + 25},${getY(c.stop)} ${i * 55 + 65},${getY(c.stop)}`)
+            points={candles
+              .map((c, i) => {
+                const xSpacing = 500 / Math.max(1, candles.length);
+                const xStart = i * xSpacing;
+                const xEnd = (i + 1) * xSpacing;
+                return `${xStart},${getY(c.stop)} ${xEnd},${getY(c.stop)}`;
+              })
               .join(" ")}
             fill="none"
-            stroke="#B3B3B3"
+            stroke="#D1D5DB"
             strokeWidth="2"
           />
 
           {/* Candlesticks */}
-          {candleData.map((c, idx) => {
-            const x = idx * 55 + 40;
-            const isUp = c.c >= c.o;
-            const openY = getY(c.o);
-            const closeY = getY(c.c);
-            const highY = getY(c.h);
-            const lowY = getY(c.l);
+          {candles.map((c, idx) => {
+            const xSpacing = 500 / Math.max(1, candles.length);
+            const x = (idx + 0.5) * xSpacing;
+            const isUp = c.close >= c.open;
+            const openY = getY(c.open);
+            const closeY = getY(c.close);
+            const highY = getY(c.high);
+            const lowY = getY(c.low);
             const topY = Math.min(openY, closeY);
             const bodyHeight = Math.max(2, Math.abs(openY - closeY));
+            const candleWidth = Math.max(2, xSpacing * 0.6);
 
             return (
               <g key={idx}>
@@ -123,17 +129,17 @@ export function ChandelierChart({
                   y1={highY}
                   x2={x}
                   y2={lowY}
-                  stroke="#737373"
+                  stroke="#4B5563"
                   strokeWidth="1"
                 />
                 {/* Candle Body */}
                 <rect
-                  x={x - 6}
+                  x={x - candleWidth / 2}
                   y={topY}
-                  width="12"
+                  width={candleWidth}
                   height={bodyHeight}
-                  fill={isUp ? "#F5F5F5" : "#1A1A1A"}
-                  stroke="#737373"
+                  fill={isUp ? "#FFFFFF" : "#111111"}
+                  stroke="#111111"
                   strokeWidth="1"
                 />
               </g>
