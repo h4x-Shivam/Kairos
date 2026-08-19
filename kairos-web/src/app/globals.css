@@ -3,29 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #FAFAFA;
-  --bg-tertiary: #F3F4F6;
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1F1F1F;
 
-  --grey-100: #111111;
-  --grey-300: #374151;
-  --grey-500: #6B7280;
-  --grey-700: #E5E7EB;
-  --grey-900: #F3F4F6;
+  --grey-100: #F5F5F5;
+  --grey-300: #B3B3B3;
+  --grey-500: #737373;
+  --grey-700: #404040;
+  --grey-900: #1A1A1A;
 
-  --text-primary: #111111;
-  --text-secondary: #4B5563;
-  --text-tertiary: #9CA3AF;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A3A3A3;
+  --text-tertiary: #6B6B6B;
 
-  --border-subtle: #E5E7EB;
-  --border-active: #D1D5DB;
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --border-active: rgba(255, 255, 255, 0.24);
 
-  --signal-hold: #166534;
-  --signal-tighten: #1D4ED8;
-  --signal-trim25: #D97706;
-  --signal-trim50: #C2410C;
-  --signal-exit: #DC2626;
-  --signal-good: #166534;
+  --signal-good: #EAB308;
   --signal-critical: #DC2626;
 }
 
@@ -45,16 +40,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAFAFA;
+  background: #0A0A0A;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D1D5DB;
+  background: #27272A;
   border-radius: 0px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+  background: #3F3F46;
 }
 
 /* Tabular numbers for all monospace elements */
@@ -62,10 +57,10 @@ body {
   font-feature-settings: "tnum" 1;
 }
 
-/* Light theme grid */
+/* Subtle Dark Grid Pattern (4-6% opacity) */
 .dark-grid-bg {
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }

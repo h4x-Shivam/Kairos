@@ -11,34 +11,29 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          primary: "#FFFFFF",
-          secondary: "#FAFAFA",
-          tertiary: "#F3F4F6",
+          primary: "#0A0A0A",
+          secondary: "#141414",
+          tertiary: "#1F1F1F",
         },
         grey: {
-          100: "#111111", // inverted for light theme
-          300: "#374151",
-          500: "#6B7280",
-          700: "#E5E7EB",
-          900: "#F3F4F6", // light grey for backgrounds
+          100: "#F5F5F5",
+          300: "#B3B3B3",
+          500: "#737373",
+          700: "#404040",
+          900: "#1A1A1A",
         },
         text: {
-          primary: "#111111",
-          secondary: "#4B5563",
-          tertiary: "#9CA3AF",
+          primary: "#FFFFFF",
+          secondary: "#A3A3A3",
+          tertiary: "#6B6B6B",
         },
         border: {
-          subtle: "#E5E7EB",
-          active: "#D1D5DB",
+          subtle: "rgba(255, 255, 255, 0.10)",
+          active: "rgba(255, 255, 255, 0.24)",
         },
         signal: {
-          hold: "#166534",      // Deep Green
-          tighten: "#1D4ED8",   // Blue
-          trim25: "#D97706",    // Amber
-          trim50: "#C2410C",    // Orange
-          exit: "#DC2626",      // Red
-          good: "#166534",      // legacy fallback
-          critical: "#DC2626",  // legacy fallback
+          good: "#EAB308",      // Yellow — reserved exclusively for HOLD verdict
+          critical: "#DC2626",  // Red — reserved exclusively for Tier-1 Critical/Emergency
         },
       },
       fontFamily: {
