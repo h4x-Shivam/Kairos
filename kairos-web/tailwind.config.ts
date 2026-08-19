@@ -11,9 +11,9 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          primary: "#0A0A0A",
-          secondary: "#141414",
-          tertiary: "#1F1F1F",
+          primary: "#07090E",
+          secondary: "#0D111A",
+          tertiary: "#141A26",
         },
         grey: {
           100: "#F5F5F5",

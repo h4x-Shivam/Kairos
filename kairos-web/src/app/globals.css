@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0A0A0A;
-  --bg-secondary: #141414;
-  --bg-tertiary: #1F1F1F;
+  --bg-primary: #07090E;
+  --bg-secondary: #0D111A;
+  --bg-tertiary: #141A26;
 
   --grey-100: #F5F5F5;
   --grey-300: #B3B3B3;
@@ -40,7 +40,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: #07090E;
 }
 
 ::-webkit-scrollbar-thumb {

@@ -68,17 +68,38 @@ def fetch_stock_data(symbol: str) -> Tuple[pd.DataFrame, Dict]:
     os.makedirs(cache_dir, exist_ok=True)
     cache_path = os.path.join(cache_dir, f"{symbol}.csv")
     
+    use_cache = False
     if os.path.exists(cache_path):
-        print(f"Loaded {symbol} from cache.")
+        mtime = os.path.getmtime(cache_path)
+        if (time.time() - mtime) < 4 * 3600:  # 4 hours cache validity
+            use_cache = True
+            
+    if use_cache:
+        print(f"Loaded {symbol} from cache (recent).")
         ohlcv = pd.read_csv(cache_path, parse_dates=['time'])
     else:
         print(f"Fetching {symbol} from yfinance...")
         ticker = yf.Ticker(symbol)
-        ohlcv = ticker.history(period="1y", interval="1d", auto_adjust=True)
-        time.sleep(2)  # Throttle to avoid rate limits
+        ohlcv = pd.DataFrame()
+        
+        max_retries = 3
+        base_delay = 3
+        for attempt in range(max_retries):
+            try:
+                ohlcv = ticker.history(period="1y", interval="1d", auto_adjust=True)
+                if not ohlcv.empty:
+                    break
+                else:
+                    print(f"  Attempt {attempt + 1}: Empty data returned. Retrying...")
+            except Exception as e:
+                print(f"  Attempt {attempt + 1}: Exception {e}. Retrying...")
+            
+            time.sleep(base_delay * (2 ** attempt))
+            
+        time.sleep(base_delay)  # Explicit throttling between requests
         
         if ohlcv.empty:
-            print(f"WARNING: No data for {symbol} from yfinance. Returning empty.")
+            print(f"ERROR: No data for {symbol} from yfinance after {max_retries} retries.")
             return ohlcv, {}
             
         ohlcv = ohlcv.reset_index()
@@ -92,9 +113,10 @@ def fetch_stock_data(symbol: str) -> Tuple[pd.DataFrame, Dict]:
     last_bar_high = float(ohlcv['high'].iloc[-1])
     last_bar_low = float(ohlcv['low'].iloc[-1])
     
-    # 5% tolerance accounts for overnight gaps or extreme intraday volatility between the last bar and realtime quote,
-    # while being tight enough to catch unadjusted-price errors (e.g. from stock splits which typically cause >10% gaps).
-    assert current_price >= last_bar_low * 0.95 and current_price <= last_bar_high * 1.05, f"Sanity assertion failed! current_price ({current_price}) misaligned with recent OHLCV bar for {symbol}."
+    # Tightened tolerance to 2% to catch subtle discrepancies (unadjusted prices or bad ticks),
+    # while allowing minor after-hours noise. If a real intraday move exceeds 2% beyond the high/low,
+    # it's an anomaly that should be flagged.
+    assert current_price >= last_bar_low * 0.98 and current_price <= last_bar_high * 1.02, f"Sanity assertion failed! current_price ({current_price}) misaligned with recent OHLCV bar for {symbol}."
     
     beta = 1.0
     
@@ -144,6 +166,17 @@ def main():
         df, data = fetch_stock_data(symbol)
         
         if df.empty:
+            results.append({
+                "Symbol": symbol,
+                "Expected": meta["expected"],
+                "Actual": "INCOMPLETE — DATA UNAVAILABLE",
+                "Match?": "N/A",
+                "Rule Applied": "N/A",
+                "S_Comp": 0.0,
+                "S_Fund": 0.0,
+                "S_Tech": 0.0,
+                "Proxies Used": "N/A",
+            })
             continue
             
         current_price = data["current_price"]
