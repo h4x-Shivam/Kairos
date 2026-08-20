@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { formatCurrency } from "@/lib/formatters";
-
+import { createChart, ColorType, CrosshairMode, LineStyle, LineType, Time, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { ChartDataPoint } from "@/types/diagnostic";
 
 interface ChandelierChartProps {
@@ -20,24 +20,123 @@ export function ChandelierChart({
   targetPrice,
   chartData,
 }: ChandelierChartProps) {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   const [timeframe, setTimeframe] = useState<"15m" | "1D" | "1W">("1D");
 
-  // Use real chart data if available, fallback safely if not
-  const candles = chartData && chartData.length > 0 ? chartData : [];
-  
-  // Need min/max to scale the Y axis
-  const minPrice = candles.length > 0 
-    ? Math.min(...candles.map((c) => Math.min(c.low, c.stop))) * 0.98 
-    : currentPrice * 0.9;
-  const maxPrice = candles.length > 0 
-    ? Math.max(...candles.map((c) => Math.max(c.high, targetPrice))) * 1.02
-    : currentPrice * 1.1;
-    
-  const priceRange = maxPrice - minPrice || 1;
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
 
-  const getY = (price: number) => {
-    return 200 - ((price - minPrice) / priceRange) * 180;
-  };
+    // 1. Create Chart
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#A3A3A3',
+        fontFamily: 'JetBrains Mono, monospace',
+      },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { visible: false },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          color: '#404040',
+          width: 1,
+          style: LineStyle.Dashed,
+          labelBackgroundColor: '#1A1A1A',
+        },
+        horzLine: {
+          color: '#404040',
+          width: 1,
+          style: LineStyle.Dashed,
+          labelBackgroundColor: '#1A1A1A',
+        },
+      },
+      rightPriceScale: {
+        borderVisible: false,
+      },
+      timeScale: {
+        borderVisible: false,
+        timeVisible: true,
+      },
+    });
+
+    // 2. Add Candlestick Series
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: '#FFFFFF',
+      downColor: '#111111',
+      borderVisible: true,
+      borderColor: '#737373',
+      wickColor: '#737373',
+      borderUpColor: '#FFFFFF',
+      borderDownColor: '#737373',
+      wickUpColor: '#FFFFFF',
+      wickDownColor: '#737373',
+    });
+
+    // Sort and map the data for the chart
+    const sortedData = [...chartData].sort((a, b) => a.time - b.time);
+    const candleData = sortedData.map(d => ({
+      time: d.time as Time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
+    
+    if (candleData.length > 0) {
+      candleSeries.setData(candleData);
+    }
+
+    // 3. Add Target Price Line (Horizontal)
+    candleSeries.createPriceLine({
+      price: targetPrice,
+      color: '#9CA3AF',
+      lineWidth: 1,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+      title: 'TARGET',
+    });
+
+    // 4. Add Chandelier Stop Series (Step Line)
+    const stopSeries = chart.addSeries(LineSeries, {
+      color: '#D1D5DB',
+      lineWidth: 2,
+      lineType: LineType.WithSteps,
+      crosshairMarkerVisible: false,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+    
+    const stopData = sortedData.map(d => ({
+      time: d.time as Time,
+      value: d.stop,
+    }));
+    
+    if (stopData.length > 0) {
+      stopSeries.setData(stopData);
+    }
+
+    // Make chart fit container properly
+    chart.timeScale().fitContent();
+
+    // Handle resize
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        chart.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+    };
+  }, [chartData, targetPrice]);
 
   return (
     <div className="w-full font-mono flex flex-col gap-6 py-4">
@@ -71,95 +170,19 @@ export function ChandelierChart({
         </div>
       </div>
 
-      {/* SVG Canvas Chart */}
+      {/* TradingView Lightweight Charts Canvas Container */}
       <div className="relative w-full h-56 sm:h-64">
-        <svg className="w-full h-full" viewBox="0 0 500 220" preserveAspectRatio="none">
-          {/* Target Price Line */}
-          <line
-            x1="0"
-            y1={getY(targetPrice)}
-            x2="500"
-            y2={getY(targetPrice)}
-            stroke="#9CA3AF"
-            strokeWidth="1"
-            strokeDasharray="4 4"
-          />
-
-          {/* 50 DMA Baseline Curve */}
-          <path
-            d={`M 0 ${getY(candles.length > 0 ? candles[0].close * 0.95 : currentPrice)} Q 250 ${getY(currentPrice * 0.95)} 500 ${getY(currentPrice * 0.97)}`}
-            fill="none"
-            stroke="#E5E7EB"
-            strokeWidth="1.5"
-          />
-
-          {/* Ratcheting Chandelier Stop Step-Line */}
-          <polyline
-            points={candles
-              .map((c, i) => {
-                const xSpacing = 500 / Math.max(1, candles.length);
-                const xStart = i * xSpacing;
-                const xEnd = (i + 1) * xSpacing;
-                return `${xStart},${getY(c.stop)} ${xEnd},${getY(c.stop)}`;
-              })
-              .join(" ")}
-            fill="none"
-            stroke="#D1D5DB"
-            strokeWidth="2"
-          />
-
-          {/* Candlesticks */}
-          {candles.map((c, idx) => {
-            const xSpacing = 500 / Math.max(1, candles.length);
-            const x = (idx + 0.5) * xSpacing;
-            const isUp = c.close >= c.open;
-            const openY = getY(c.open);
-            const closeY = getY(c.close);
-            const highY = getY(c.high);
-            const lowY = getY(c.low);
-            const topY = Math.min(openY, closeY);
-            const bodyHeight = Math.max(2, Math.abs(openY - closeY));
-            const candleWidth = Math.max(2, xSpacing * 0.6);
-
-            return (
-              <g key={idx}>
-                {/* Wick */}
-                <line
-                  x1={x}
-                  y1={highY}
-                  x2={x}
-                  y2={lowY}
-                  stroke="#4B5563"
-                  strokeWidth="1"
-                />
-                {/* Candle Body */}
-                <rect
-                  x={x - candleWidth / 2}
-                  y={topY}
-                  width={candleWidth}
-                  height={bodyHeight}
-                  fill={isUp ? "#FFFFFF" : "#111111"}
-                  stroke="#111111"
-                  strokeWidth="1"
-                />
-              </g>
-            );
-          })}
-        </svg>
+        <div ref={chartContainerRef} className="absolute inset-0" />
 
         {/* Floating Legend Badges */}
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1 text-[10px] bg-bg-primary/90 border border-border-subtle p-2">
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1 text-[10px] bg-bg-primary/90 border border-border-subtle p-2 pointer-events-none z-10">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-grey-300" />
+            <span className="w-3 h-0.5 bg-[#D1D5DB]" />
             <span className="text-text-secondary">CHANDELIER FLOOR: {formatCurrency(stopPrice)}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 border-t border-dashed border-grey-500" />
+            <span className="w-3 h-0.5 border-t border-dashed border-[#9CA3AF]" />
             <span className="text-text-tertiary">TARGET: {formatCurrency(targetPrice)}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-grey-700" />
-            <span className="text-text-tertiary">50 DMA BASELINE</span>
           </div>
         </div>
       </div>
