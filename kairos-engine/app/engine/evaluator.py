@@ -7,6 +7,7 @@ from app.schemas.diagnostic import (
     ScoreCard,
     StopLossTelemetry,
     ChartDataPoint,
+    PlainLanguageExplanations,
 )
 from app.engine.precedence_grid import resolve_precedence_grid
 from app.engine.indicators import (
@@ -24,6 +25,14 @@ from app.engine.module_d_sentiment import (
 from app.engine.conflict_resolution import resolve_verdict
 from app.engine.risk_sizing import compute_risk_reward_and_kelly
 from app.engine.audit_hash import generate_sebi_audit_hash
+from app.schemas.enums import OverrideRule
+from app.engine.plain_language import (
+    generate_plain_summary,
+    explain_fundamental_pillar,
+    explain_technical_pillar,
+    explain_quant_pillar,
+    explain_news_pillar,
+)
 
 
 def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
@@ -107,6 +116,24 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
         s_composite=final_composite,
     )
     
+    if rule_applied == OverrideRule.RULE_2A_STOP_BREACH_COMPOUNDER:
+        # Re-calculate stop telemetry using a 1.0x ATR multiplier
+        stops_1x, _, _ = compute_chandelier_stop_series(
+            diag_input.bars,
+            multiplier=1.0,
+            lookback_hh=22,
+            atr_period=14,
+        )
+        current_stop = float(stops_1x[-1])
+        if diag_input.current_price > 0:
+            floored_risk_delta = max(0.50, diag_input.current_price - current_stop, 0.5 * current_atr)
+            cushion_pct = (floored_risk_delta / diag_input.current_price) * 100.0
+        else:
+            cushion_pct = 0.0
+        is_breached = bool(diag_input.current_price <= current_stop)
+        weights = weights.model_copy(update={"net_multiplier": 1.0})
+        stops = stops_1x
+    
     stop_telemetry = StopLossTelemetry(
         current_price=round(diag_input.current_price, 2),
         chandelier_stop=round(current_stop, 2),
@@ -130,6 +157,14 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
         "evaluated_at": epoch_now,
     }
     audit_hash = generate_sebi_audit_hash(audit_payload)
+    
+    plain_language = PlainLanguageExplanations(
+        summary=generate_plain_summary(action.value, s_fund, s_tech, s_quant, s_news, rule_applied.value, diag_input.symbol),
+        pillar_fund=explain_fundamental_pillar(diag_input.fundamentals.roce_current, diag_input.fundamentals.peg_ratio, diag_input.fundamentals.promoter_pledge_pct, diag_input.fundamentals.debt_to_equity, diag_input.fundamentals.fcf_to_net_profit),
+        pillar_tech=explain_technical_pillar(diag_input.technicals.sma_50, diag_input.technicals.sma_200, diag_input.technicals.rsi_14, diag_input.technicals.delivery_pct),
+        pillar_quant=explain_quant_pillar(diag_input.quant.high_52w, diag_input.quant.beta, diag_input.quant.realized_volatility_1y, cushion_pct),
+        pillar_news=explain_news_pillar(is_tier1_active, diag_input.disclosures)
+    )
     
     # 8. Compile Chart Data for UI (subset of last N bars for visualization)
     chart_data = []
@@ -167,6 +202,7 @@ def evaluate_diagnostic(diag_input: DiagnosticInput) -> DiagnosticOutput:
         quant=diag_input.quant,
         disclosures=diag_input.disclosures,
         chart_data=chart_data,
+        plain_language=plain_language,
         audit_hash=audit_hash,
         evaluated_at_epoch=epoch_now,
     )

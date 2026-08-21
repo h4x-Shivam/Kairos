@@ -16,12 +16,13 @@ interface ModuleData {
   status: "STRONG" | "WEAK" | "FAIR" | "POSITIVE" | "NEGATIVE";
   drivers: { label: string; value: string }[];
   subMetrics: { label: string; value: string; benchmark: string }[];
+  plainExplanation?: string;
 }
 
 export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   
-  const { scores, fundamentals: fund, technicals: tech, quant, stop_telemetry: stop, disclosures = [] } = diagnostic;
+  const { scores, fundamentals: fund, technicals: tech, quant, stop_telemetry: stop, disclosures = [], plain_language } = diagnostic;
 
   const tier1Active = disclosures.some((d) => d.is_tier1_trigger && d.hours_ago <= 168.0);
   const avgSentiment = disclosures.length > 0 
@@ -45,8 +46,9 @@ export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
       subMetrics: [
         { label: "Trailing 3Q ROCE", value: `${fund.roce_3q_avg.toFixed(1)}%`, benchmark: "Stable" },
         { label: "FCF / Net Profit", value: `${fund.fcf_to_net_profit.toFixed(2)}x`, benchmark: "> 0.70x" },
-        { label: "Debt-to-Equity", value: `${fund.debt_to_equity.toFixed(2)}`, benchmark: "< 1.00" },
+        { label: "Debt-to-Equity", value: `${fund.debt_to_equity.toFixed(2)}`, benchmark: "< 0.70" },
       ],
+      plainExplanation: plain_language?.pillar_fund,
     },
     {
       id: "tech",
@@ -63,6 +65,7 @@ export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
         { label: "Distance to 50 DMA", value: `${(((stop.current_price - tech.sma_50) / tech.sma_50) * 100).toFixed(1)}%`, benchmark: "Supported" },
         { label: "Distance to 200 DMA", value: `${(((stop.current_price - tech.sma_200) / tech.sma_200) * 100).toFixed(1)}%`, benchmark: "Trend Base" },
       ],
+      plainExplanation: plain_language?.pillar_tech,
     },
     {
       id: "quant",
@@ -79,6 +82,7 @@ export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
         { label: "Wilder ATR(14)", value: `₹${stop.atr_14.toFixed(2)}`, benchmark: `${((stop.atr_14 / stop.current_price) * 100).toFixed(2)}% of LTP` },
         { label: "1Y Realized Vol", value: `${quant.realized_volatility_1y.toFixed(1)}%`, benchmark: "< 35.0%" },
       ],
+      plainExplanation: plain_language?.pillar_quant,
     },
     {
       id: "news",
@@ -97,6 +101,7 @@ export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
         { label: "Credit Rating Watch", value: "AAA Stable", benchmark: "Investment Grade" },
         { label: "Sentiment Decay Rate", value: "0.95^t", benchmark: "Active Half-Life" },
       ],
+      plainExplanation: plain_language?.pillar_news,
     },
   ];
 
@@ -169,6 +174,11 @@ export function DiagnosticGrid({ diagnostic }: DiagnosticGridProps) {
               {/* Inline Accordion Deep-Dive Table */}
               {isExpanded && (
                 <div className="mt-4 pt-3 border-t border-border-subtle space-y-2 text-xs bg-bg-secondary p-4">
+                  {m.plainExplanation && (
+                    <div className="mb-4 text-sm font-sans font-light text-text-secondary leading-relaxed">
+                      {m.plainExplanation}
+                    </div>
+                  )}
                   <div className="text-[10px] text-text-tertiary uppercase mb-2 font-bold tracking-widest">
                     Sub-Metric Verification Trace
                   </div>

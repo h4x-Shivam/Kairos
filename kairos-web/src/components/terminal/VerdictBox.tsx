@@ -16,6 +16,7 @@ interface VerdictBoxProps {
   scores: ScoreCard;
   weights: PrecedenceWeights;
   explanation: string;
+  plainSummary?: string;
   evaluatedEpoch: number;
   horizonMode: HorizonMode;
   onToggleHorizon?: (mode: HorizonMode) => void;
@@ -27,6 +28,7 @@ export function VerdictBox({
   scores,
   weights,
   explanation,
+  plainSummary,
   evaluatedEpoch,
   horizonMode,
   onToggleHorizon,
@@ -81,9 +83,16 @@ export function VerdictBox({
 
         <div className="w-px h-8 bg-border-subtle hidden sm:block" />
 
-        <p className="text-sm md:text-base font-sans text-text-secondary leading-relaxed max-w-3xl">
-          {explanation}
-        </p>
+        <div className="flex flex-col gap-2 max-w-3xl">
+          <p className="text-sm md:text-base font-mono text-text-secondary leading-relaxed">
+            {explanation}
+          </p>
+          {plainSummary && (
+            <p className="text-sm md:text-base font-sans font-light text-text-primary leading-relaxed mt-1">
+              {plainSummary}
+            </p>
+          )}
+        </div>
       </div>
       
       {isTier1Critical && (

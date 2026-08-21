@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
 import { StopLossTelemetry } from "@/types/diagnostic";
 
@@ -16,6 +16,10 @@ export function StopLossDesk({
   onMultiplierChange,
 }: StopLossDeskProps) {
   const [multiplier, setMultiplier] = useState(baseMultiplier);
+
+  useEffect(() => {
+    setMultiplier(baseMultiplier);
+  }, [baseMultiplier]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);

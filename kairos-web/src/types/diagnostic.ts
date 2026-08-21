@@ -16,6 +16,14 @@ export type OverrideRule =
   | "RULE_4_DOUBLE_STRUCTURAL_BREAKDOWN"
   | "RULE_5_MOMENTUM_EXHAUSTION_DIVERGENCE";
 
+export interface PlainLanguageExplanations {
+  summary: string;
+  pillar_fund: string;
+  pillar_tech: string;
+  pillar_quant: string;
+  pillar_news: string;
+}
+
 export interface ScoreCard {
   s_fund: number;
   s_tech: number;
@@ -121,6 +129,7 @@ export interface DiagnosticOutput {
   quant: QuantMetrics;
   disclosures: SentimentDisclosureInput[];
   chart_data: ChartDataPoint[];
+  plain_language: PlainLanguageExplanations;
   audit_hash: string;
   evaluated_at_epoch: number;
   tax_impact?: TaxImpactResult | null;

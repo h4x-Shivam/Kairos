@@ -70,6 +70,7 @@ export default function DiagnosticPage({ params }: DiagnosticPageProps) {
                 scores={diagnosticData.scores}
                 weights={diagnosticData.weights}
                 explanation={diagnosticData.explanation}
+                plainSummary={diagnosticData.plain_language?.summary}
                 evaluatedEpoch={diagnosticData.evaluated_at_epoch}
                 horizonMode={horizonMode}
                 onToggleHorizon={toggleHorizonMode}

@@ -9,6 +9,17 @@ from app.schemas.enums import (
 )
 
 
+class PlainLanguageExplanations(BaseModel):
+    """Contextual plain-language text representations for verdicts and pillars."""
+    model_config = ConfigDict(frozen=True)
+    
+    summary: str
+    pillar_fund: str
+    pillar_tech: str
+    pillar_quant: str
+    pillar_news: str
+
+
 class OHLCVBar(BaseModel):
     """Single OHLCV candlestick bar."""
     model_config = ConfigDict(frozen=True)
@@ -158,6 +169,7 @@ class DiagnosticOutput(BaseModel):
     quant: QuantMetricsInput
     disclosures: List[SentimentDisclosureInput]
     chart_data: List[ChartDataPoint]
+    plain_language: PlainLanguageExplanations
     audit_hash: str
     evaluated_at_epoch: int
     tax_impact: Optional[Dict[str, Any]] = None
